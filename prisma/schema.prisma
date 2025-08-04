@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fullName    String?  @default("")
+  email       String   @unique
+  phoneNumber String?   @default("")
+  password    String
+  gender      String?  @default("")
+  city        String?  @default("") 
+  role        UserRole @default(STUDENT)
+  status      UserStatus @default(ACTIVE)
+  fcmToken    String?  @default("")
+  profileImage String? @default("")
+
+  otp         Int? 
+  otpExpiresAt DateTime? @default(now())
+
+
+
+  createdAt   DateTime @default(now()) 
+  updatedAt   DateTime @updatedAt
+
+  roomsSent             Room[]         @relation("SenderRelation")
+  roomsReceived         Room[]         @relation("ReceiverRelation")
+  chatsSent             Chat[]         @relation("SenderRelation")
+  chatsReceived         Chat[]         @relation("ReceiverRelation")
+  reviews               Review[]
+  notificationsSent     Notification[] @relation("Sender")
+  notificationsReceived Notification[] @relation("Receiver")
+}
+
+enum UserRole {
+  ADMIN
+  TUTOR
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
+
+model Room {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User   @relation("SenderRelation", fields: [senderId], references: [id])
+  receiver User   @relation("ReceiverRelation", fields: [receiverId], references: [id])
+  chat     Chat[]
+
+  @@map("rooms")
+}
+
+model Chat {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  senderId   String   @db.ObjectId
+  receiverId String   @db.ObjectId
+  roomId     String   @db.ObjectId
+  message    String
+  images     String[]
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sender   User @relation("SenderRelation", fields: [senderId], references: [id])
+  receiver User @relation("ReceiverRelation", fields: [receiverId], references: [id])
+  room     Room @relation(fields: [roomId], references: [id])
+
+  @@map("chats")
+}
+
+model PaymentInfo {
+  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
+  userEmail          String?   @default("")
+  subscriptionPlane  String?   @default("")
+  subscriptionId     String?   @default("")
+  date               DateTime? @default(now())
+  amount             Float?    @default(0)
+  tranId             String?   @default("")
+  status             String?   @default("PENDING")
+  hosted_invoice_url String?   @default("")
+  invoice_pdf        String?   @default("")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("paymentInfos")
+}
+
+model Notification {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  receiverId String   @db.ObjectId
+  senderId   String   @db.ObjectId
+  receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
+  sender     User     @relation("Sender", fields: [senderId], references: [id])
+  title      String
+  body       String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model Review {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("reviews")
+}
