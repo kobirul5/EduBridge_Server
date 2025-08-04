@@ -61,34 +61,6 @@ const loginUser = async (payload: {
   return { token: accessToken };
 };
 
-// get user profile
-const getMyProfile = async (userToken: string) => {
-  const decodedToken = jwtHelpers.verifyToken(
-    userToken,
-    config.jwt.jwt_secret!
-  );
-
-  const userProfile = await prisma.user.findUnique({
-    where: {
-      id: decodedToken.id,
-    },
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      phoneNumber: true,
-      gender: true,
-      role: true,
-      status: true,
-      fcmToken: true,
-      profileImage: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
-
-  return userProfile;
-};
 
 // change password
 
@@ -349,7 +321,6 @@ const deleteUser = async (userId: string) => {
 
 export const AuthServices = {
   loginUser,
-  getMyProfile,
   changePassword,
   forgotPassword,
   resetPassword,

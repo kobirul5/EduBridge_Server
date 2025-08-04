@@ -26,6 +26,18 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+const getMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const userToken = req.headers.authorization;
+
+  const result = await userService.getMyProfile(userToken as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: "User profile retrieved successfully",
+    data: result,
+  });
+});
+
 
 // // get all user form db
 // const getUsers = catchAsync(async (req: Request, res: Response) => {
@@ -155,6 +167,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 
 export const userController = {
   createUser,
+  getMyProfile
   // getUsers,
   // getAllUsers,
   // getAllUserAndEvents,

@@ -6,6 +6,7 @@ import config from "../../../config";
 import ApiError from "../../../errors/ApiErrors";
 import { fileUploader } from "../../../helpars/fileUploader";
 import prisma from "../../../shared/prisma";
+import { jwtHelpers } from "../../../helpars/jwtHelpers";
 
 
 const createUserIntoDb = async (userData: {email: string, password:string, role:any}) => {
@@ -50,9 +51,38 @@ const createUserIntoDb = async (userData: {email: string, password:string, role:
 
 }
 
+// get user profile
+const getMyProfile = async (userToken: string) => {
+  const decodedToken = jwtHelpers.verifyToken(
+    userToken,
+    config.jwt.jwt_secret!
+  );
+
+  const userProfile = await prisma.user.findUnique({
+    where: {
+      id: decodedToken.id,
+    },
+    select: {
+      id: true,
+      email: true,
+      fullName: true,
+      phoneNumber: true,
+      gender: true,
+      role: true,
+      status: true,
+      fcmToken: true,
+      profileImage: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return userProfile;
+};
 
 
 
 export const userService = {
  createUserIntoDb,
+ getMyProfile
 };

@@ -35,17 +35,7 @@ const logoutUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 // get user profile
-const getMyProfile = catchAsync(async (req: Request, res: Response) => {
-  const userToken = req.headers.authorization;
 
-  const result = await AuthServices.getMyProfile(userToken as string);
-  sendResponse(res, {
-    success: true,
-    statusCode: 201,
-    message: "User profile retrieved successfully",
-    data: result,
-  });
-});
 
 // change password
 const changePassword = catchAsync(async (req: Request, res: Response) => {
@@ -154,7 +144,6 @@ const deleteUserController = catchAsync(async (req: Request, res: Response) => {
 export const AuthController = {
   loginUser,
   logoutUser,
-  getMyProfile,
   changePassword,
   forgotPassword,
   resetPassword,

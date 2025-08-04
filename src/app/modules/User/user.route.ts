@@ -14,6 +14,24 @@ router.post(
   validateRequest(UserValidation.CreateUserValidationSchema),
   userController.createUser
 );
+
+router.get(
+  "/get-me",
+  auth(UserRole.ADMIN, UserRole.STUDENT),
+  userController.getMyProfile
+);
+
+// router.put(
+//   "/update-profile",
+//   // validateRequest(UserValidation.userUpdateSchema),
+
+//   auth(UserRole.ADMIN, UserRole.USER),
+//   fileUploader.uploadMultipleImage,
+//   userController.updateProfile
+// );
+
+
+
 // *!get all  user
 // router.get("/", userController.getUsers);
 // router.get("/get-random-user", userController.getRandomUser);
@@ -24,14 +42,7 @@ router.post(
 // router.get("/:id", userController.getSingleUserById);
 
 // // *!profile user
-// router.put(
-//   "/update-profile",
-//   // validateRequest(UserValidation.userUpdateSchema),
 
-//   auth(UserRole.ADMIN, UserRole.USER),
-//   fileUploader.uploadMultipleImage,
-//   userController.updateProfile
-// );
 
 // // *!update  user
 // router.put("/:id", userController.updateUser);
