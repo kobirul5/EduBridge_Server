@@ -15,10 +15,13 @@ model User {
   password          String
   gender            String?        @default("")
   city              String?        @default("")
-  role              UserRole       @default(STUDENT)
   status            UserStatus     @default(ACTIVE)
   fcmToken          String?        @default("")
   profileImage      String?        @default("")
+    // ✅ Tutor approval process
+  role              UserRole       @default(STUDENT)
+  isTutorRequest    Boolean        @default(false) // ইউজার চাইছে টিউটর হতে
+  isTutorApproved   Boolean        @default(false) // অ্যাডমিন approve করছে কিনা
 
   otp               Int?
   otpExpiresAt      DateTime?      @default(now())

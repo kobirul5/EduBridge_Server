@@ -15,10 +15,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
 
   const result = await userService.createUserIntoDb(req.body);
 
-  if (!result) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST, "User creation failed. Please check the input data.")
-  }
+
 
   sendResponse(res, {
     statusCode: httpStatus.OK,

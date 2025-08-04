@@ -6,6 +6,10 @@ const CreateUserValidationSchema = z.object({
     .string()
     .min(8, "Password must be at least 8 characters long")
     .nonempty("Password is required"),
+  role: z
+    .enum(["STUDENT", "TUTOR"], {
+      errorMap: () => ({ message: "Role must be either STUDENT or TUTOR" }),
+    })
 });
 
 export { CreateUserValidationSchema };

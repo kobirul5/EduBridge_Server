@@ -5,13 +5,12 @@ import httpStatus from "http-status";
 import config from "../../../config";
 import ApiError from "../../../errors/ApiErrors";
 import { fileUploader } from "../../../helpars/fileUploader";
-import emailSender from "../../../shared/emailSender";
-import { generateOtpEmailHtml } from "../../../shared/html";
 import prisma from "../../../shared/prisma";
-import { userSearchAbleFields } from "./user.costant";
-import { calculateAge } from "../../../shared/calculateAge";
 
-const createUserIntoDb = async (userData: {email: string, password:string}) => {
+
+const createUserIntoDb = async (userData: {email: string, password:string, role:any}) => {
+
+  console.log("Creating user with data:", userData);
 
   // check if user already exists
   const isUserExist = await prisma.user.findUnique({
@@ -26,14 +25,25 @@ const createUserIntoDb = async (userData: {email: string, password:string}) => {
 
   // hash password
   const hashedPassword = await bcrypt.hash(userData.password, Number(config.bcrypt_salt_rounds));
+  
 
+    const dataToSave = {
+    email: userData.email,
+    password: hashedPassword,
+    role: userData.role === 'TUTOR' ? 'STUDENT' : userData.role,
+    isTutorRequest: userData.role === 'TUTOR',
+    isTutorApproved: false,
+  };
+  
   // create user
   const newUser = await prisma.user.create({
-    data: {
-      ...userData,
-      password: hashedPassword,
-    },
+    data: dataToSave,
   });
+
+
+  if (!newUser) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User creation failed. Please check the input data.");
+  }
 
   return newUser;
 
