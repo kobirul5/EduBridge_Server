@@ -3,7 +3,9 @@ import catchAsync from "../../../shared/catchAsync";
 import { AuthServices } from "./auth.service";
 import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
-import { string } from "zod";
+import ApiError from "../../../errors/ApiErrors";
+import { jwtHelpers } from "../../../helpars/jwtHelpers";
+
 
 const loginUser = catchAsync(async (req: Request, res: Response) => {
 
@@ -67,6 +69,10 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 // forgot password
 const forgotPassword = catchAsync(async (req: Request, res: Response) => {
 
+  if(!req.body.email) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email is required");
+  }
+
   const result= await AuthServices.forgotPassword(req.body);
 
   sendResponse(res, {
@@ -76,6 +82,9 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
       data: result
   })
 });
+
+
+ // resend OTP
 const resendOtp = catchAsync(async (req: Request, res: Response) => {
 
   const result= await AuthServices.resendOtp(req.body.email);
@@ -114,6 +123,33 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+//delete user
+const deleteUserController = catchAsync(async (req: Request, res: Response) => {
+  const userToken = req.headers.authorization;
+  console.log("User token:", userToken);
+
+  if (!userToken) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "User not authenticated");
+  }
+
+  const decodedToken= jwtHelpers.verifyToken(
+    userToken,
+    process.env.JWT_SECRET as string
+  );
+
+  if (!decodedToken || !decodedToken.id) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid token");
+  }
+
+  console.log("Decoded token:", decodedToken);
+  const result = await AuthServices.deleteUser(decodedToken.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: "User deleted successfully",
+    data: result,
+  });
+})
 
 export const AuthController = {
   loginUser,
@@ -123,5 +159,7 @@ export const AuthController = {
   forgotPassword,
   resetPassword,
   resendOtp,
-  verifyForgotPasswordOtp
+  verifyForgotPasswordOtp,
+  deleteUserController
+  
 };

@@ -11,7 +11,7 @@ const router = express.Router();
 // user login route
 router.post(
   "/login",
-  validateRequest(UserValidation.UserLoginValidationSchema),
+  // validateRequest(UserValidation.UserLoginValidationSchema),
   AuthController.loginUser
 );
 
@@ -49,5 +49,11 @@ router.post(
   '/reset-password',
   AuthController.resetPassword
 )
+
+router.delete(
+  '/delete-account',
+  auth(),
+  AuthController.deleteUserController
+);
 
 export const AuthRoutes = router;
