@@ -9,7 +9,7 @@ import ApiError from "../../../errors/ApiErrors";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
 
-  if(!req.body.email || !req.body.password) {
+  if (!req.body.email || !req.body.password) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email and password are required.");
   }
 
@@ -37,6 +37,28 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+
+// * Update user profile
+const updateProfileController = catchAsync(async (req: Request, res: Response) => {
+
+  const userId = req.user.id;
+
+  const updateData = JSON.parse(req.body.data);
+  const file = req.file;
+  console.log("Update data:", updateData);
+
+  const user = await userService.updateUserProfile(userId, updateData, file);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User profile updated successfully",
+    data: user,
+  });
+});
+
+
+
 
 
 // // get all user form db
@@ -93,20 +115,6 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
 //   });
 // });
 
-
-
-// // get all user form db
-// const updateProfile = catchAsync(async (req: Request & {user?:any}, res: Response) => {
-//   const user = req?.user;
-
-//   const result = await userService.updateProfile(req);
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Profile updated successfully!",
-//     data: result,
-//   });
-// });
 
 
 // // *! update user role and account status
@@ -167,11 +175,11 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
 
 export const userController = {
   createUser,
-  getMyProfile
+  getMyProfile,
+  updateProfileController,
   // getUsers,
   // getAllUsers,
   // getAllUserAndEvents,
-  // updateProfile,
   // updateUser,
   // getRandomUser,
   // getUserForHomePage,

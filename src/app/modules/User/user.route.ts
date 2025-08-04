@@ -21,14 +21,13 @@ router.get(
   userController.getMyProfile
 );
 
-// router.put(
-//   "/update-profile",
-//   // validateRequest(UserValidation.userUpdateSchema),
-
-//   auth(UserRole.ADMIN, UserRole.USER),
-//   fileUploader.uploadMultipleImage,
-//   userController.updateProfile
-// );
+router.patch(
+  "/update-profile",
+  auth(),
+  // validateRequest(UserValidation.userUpdateSchema),
+  fileUploader.uploadSingle,
+  userController.updateProfileController
+);
 
 
 

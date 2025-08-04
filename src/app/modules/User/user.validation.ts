@@ -13,6 +13,8 @@ const CreateUserValidationSchema = z.object({
 });
 
 export { CreateUserValidationSchema };
+
+
 const UserLoginValidationSchema = z.object({
   email: z.string().email().nonempty("Email is required"),
   password: z

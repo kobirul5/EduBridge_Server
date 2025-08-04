@@ -7,6 +7,7 @@ import ApiError from "../../../errors/ApiErrors";
 import { fileUploader } from "../../../helpars/fileUploader";
 import prisma from "../../../shared/prisma";
 import { jwtHelpers } from "../../../helpars/jwtHelpers";
+import { IUser } from "./user.interface";
 
 
 const createUserIntoDb = async (userData: {email: string, password:string, role:any}) => {
@@ -69,6 +70,7 @@ const getMyProfile = async (userToken: string) => {
       phoneNumber: true,
       gender: true,
       role: true,
+      city: true,
       status: true,
       fcmToken: true,
       profileImage: true,
@@ -80,9 +82,52 @@ const getMyProfile = async (userToken: string) => {
   return userProfile;
 };
 
+const updateUserProfile = async (userId: string, updateData: Partial<IUser>,  file?: Express.Multer.File) => {
+  // Check if user exists
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  
+
+   // If file exists, upload and set profileImage url
+  if (file) {
+    const uploadedImageUrl = await fileUploader.uploadToDigitalOcean(file);
+    updateData.profileImage = uploadedImageUrl.Location;
+  }
+
+  // Update user profile with only provided fields
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      ...updateData,         
+      updatedAt: new Date(),
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phoneNumber: true,
+      profileImage: true,
+      role: true,
+      status: true,
+      city: true,
+      gender: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return updatedUser;
+};
+
 
 
 export const userService = {
  createUserIntoDb,
- getMyProfile
+ getMyProfile,
+ updateUserProfile
 };
