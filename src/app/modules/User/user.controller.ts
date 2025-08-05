@@ -43,10 +43,9 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
 const updateProfileController = catchAsync(async (req: Request, res: Response) => {
 
   const userId = req.user.id;
-
   const updateData = JSON.parse(req.body.data);
   const file = req.file;
-  console.log("Update data:", updateData);
+
 
   const user = await userService.updateUserProfile(userId, updateData, file);
   sendResponse(res, {

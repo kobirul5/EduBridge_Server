@@ -18,14 +18,11 @@ model User {
   status            UserStatus     @default(ACTIVE)
   fcmToken          String?        @default("")
   profileImage      String?        @default("")
-    // ✅ Tutor approval process
   role              UserRole       @default(STUDENT)
-  isTutorRequest    Boolean        @default(false) // ইউজার চাইছে টিউটর হতে
-  isTutorApproved   Boolean        @default(false) // অ্যাডমিন approve করছে কিনা
-
+  isTutorRequest    Boolean        @default(false)
+  isTutorApproved   Boolean        @default(false)
   otp               Int?
   otpExpiresAt      DateTime?      @default(now())
-
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
@@ -36,6 +33,14 @@ model User {
   reviews           Review[]
   notificationsSent Notification[] @relation("Sender")
   notificationsReceived Notification[] @relation("Receiver")
+
+  // ✅ Add this line:
+  tutorPayments     Payment[]      @relation("TutorPayments")
+  tutor       Tutor?
+
+  // Add this line for the Booking relation:
+  tutorBookings     Booking[]      @relation("TutorBookings")
+  studentBookings   Booking[]      @relation("StudentBookings")
 }
 
 enum UserRole {
@@ -49,6 +54,79 @@ enum UserStatus {
   INACTIVE
   BLOCKED
 }
+
+model Tutor {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @unique @db.ObjectId
+  user           User      @relation(fields: [userId], references: [id])
+
+  expertise      String[]  // Subjects the tutor can teach (e.g. ["Math", "Physics"])
+  education      String?   // Optional: University name or degree info
+  experience     Int?      // Years of teaching experience
+  bio            String?   // Short description about the tutor
+  hourlyRate     Float?    // e.g. 20.00
+  availableDays  String[]  // e.g. ["Saturday", "Monday"]
+  availableTime  String[]  // e.g. ["6:00 PM", "8:00 PM"]
+
+  city           String?   // Optional: for filtering tutors by city
+  rating         Float?    @default(0.0)
+  totalReviews   Int?      @default(0)
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  bookings       Booking[] @relation("TutorToBookings") // All bookings related to this tutor
+  payments       Payment[] @relation("TutorToPayments") // Payments made to this tutor
+}
+
+
+model Payment {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  studentID       String?  @default("")
+  tutorID         String   @db.ObjectId
+  amountPaid      Float?   @default(0)
+  paymentMethod   String?  @default("")
+  paymentStatus   String?  @default("PENDING")
+  paymentDate     DateTime @default(now())
+  paymentGateway  String?  @default("")
+  transactionId   String?  @default("")
+  invoice_pdf     String?  @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // ✅ Proper tutor relation
+  tutor           User     @relation("TutorPayments", fields: [tutorID], references: [id])
+  tutorProfile    Tutor?   @relation("TutorToPayments", fields: [tutorID], references: [userId])
+
+  // Booking relation handled on Booking side
+  booking         Booking?
+  bookingId       String?  @db.ObjectId
+}
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model Booking {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  tutorId     String   @db.ObjectId
+  studentId   String   @db.ObjectId
+  subject     String
+  day         String
+  time        String
+  status      BookingStatus
+  createdAt   DateTime @default(now())
+  payment     Payment? @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  paymentId   String?  @unique @db.ObjectId
+  tutorProfile Tutor?  @relation("TutorToBookings", fields: [tutorId], references: [userId])
+  tutor       User     @relation("TutorBookings", fields: [tutorId], references: [id])
+  student     User     @relation("StudentBookings", fields: [studentId], references: [id])
+}
+
+
+
 
 model Room {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -82,22 +160,7 @@ model Chat {
   @@map("chats")
 }
 
-model PaymentInfo {
-  id                 String    @id @default(auto()) @map("_id") @db.ObjectId
-  userEmail          String?   @default("")
-  subscriptionPlane  String?   @default("")
-  subscriptionId     String?   @default("")
-  date               DateTime? @default(now())
-  amount             Float?    @default(0)
-  tranId             String?   @default("")
-  status             String?   @default("PENDING")
-  hosted_invoice_url String?   @default("")
-  invoice_pdf        String?   @default("")
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
 
-  @@map("paymentInfos")
-}
 
 model Notification {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
