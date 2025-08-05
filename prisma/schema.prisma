@@ -7,42 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                String         @id @default(auto()) @map("_id") @db.ObjectId
-  fullName          String?        @default("")
-  email             String         @unique
-  phoneNumber       String?        @default("")
-  password          String
-  gender            String?        @default("")
-  city              String?        @default("")
-  status            UserStatus     @default(ACTIVE)
-  fcmToken          String?        @default("")
-  profileImage      String?        @default("")
-  role              UserRole       @default(STUDENT)
-  isTutorRequest    Boolean        @default(false)
-  isTutorApproved   Boolean        @default(false)
-  otp               Int?
-  otpExpiresAt      DateTime?      @default(now())
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-
-  roomsSent         Room[]         @relation("SenderRelation")
-  roomsReceived     Room[]         @relation("ReceiverRelation")
-  chatsSent         Chat[]         @relation("SenderRelation")
-  chatsReceived     Chat[]         @relation("ReceiverRelation")
-  reviews           Review[]
-  notificationsSent Notification[] @relation("Sender")
-  notificationsReceived Notification[] @relation("Receiver")
-
-  // ✅ Add this line:
-  tutorPayments     Payment[]      @relation("TutorPayments")
-  tutor   Tutor?  @relation("UserToTutor")
-
-  // Add this line for the Booking relation:
-  tutorBookings     Booking[]      @relation("TutorBookings")
-  studentBookings   Booking[]      @relation("StudentBookings")
-}
-
 enum UserRole {
   ADMIN
   TUTOR
@@ -55,53 +19,6 @@ enum UserStatus {
   BLOCKED
 }
 
-model Tutor {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String   @unique @db.ObjectId
-  user    User    @relation("UserToTutor", fields: [userId], references: [id])
-
-  expertise      String[]  // Subjects the tutor can teach (e.g. ["Math", "Physics"])
-  education      String?   // Optional: University name or degree info
-  experience     Int?      // Years of teaching experience
-  bio            String?   // Short description about the tutor
-  hourlyRate     Float?    // e.g. 20.00
-  availableDays  String[]  // e.g. ["Saturday", "Monday"]
-  availableTime  String[]  // e.g. ["6:00 PM", "8:00 PM"]
-
-  city           String?   // Optional: for filtering tutors by city
-  rating         Float?    @default(0.0)
-  totalReviews   Int?      @default(0)
-
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-
-  bookings       Booking[] @relation("TutorToBookings") // All bookings related to this tutor
-  payments       Payment[] @relation("TutorToPayments") // Payments made to this tutor
-}
-
-
-model Payment {
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  studentID       String?  @default("")
-  tutorID         String   @db.ObjectId
-  amountPaid      Float?   @default(0)
-  paymentMethod   String?  @default("")
-  paymentStatus   String?  @default("PENDING")
-  paymentDate     DateTime @default(now())
-  paymentGateway  String?  @default("")
-  transactionId   String?  @default("")
-  invoice_pdf     String?  @default("")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  // ✅ Proper tutor relation
-  tutor           User     @relation("TutorPayments", fields: [tutorID], references: [id])
-  tutorProfile    Tutor?   @relation("TutorToPayments", fields: [tutorID], references: [userId])
-
-  // Booking relation handled on Booking side
-  booking         Booking?
-  bookingId       String?  @db.ObjectId
-}
 enum BookingStatus {
   PENDING
   CONFIRMED
@@ -109,24 +26,92 @@ enum BookingStatus {
   CANCELLED
 }
 
-model Booking {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  tutorId     String   @db.ObjectId
-  studentId   String   @db.ObjectId
-  subject     String
-  day         String
-  time        String
-  status      BookingStatus
-  createdAt   DateTime @default(now())
-  payment     Payment? @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  paymentId   String?  @unique @db.ObjectId
-  tutorProfile Tutor?  @relation("TutorToBookings", fields: [tutorId], references: [userId])
-  tutor       User     @relation("TutorBookings", fields: [tutorId], references: [id])
-  student     User     @relation("StudentBookings", fields: [studentId], references: [id])
+model User {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  fullName     String?    @default("")
+  email        String     @unique
+  phoneNumber  String?    @default("")
+  password     String
+  gender       String?    @default("")
+  city         String?    @default("")
+  status       UserStatus @default(ACTIVE)
+  fcmToken     String?    @default("")
+  profileImage String?    @default("")
+  hourlyRate   Float?     @default(0.0)
+  isTutorRequest  Boolean @default(false)
+  isTutorApproved Boolean @default(false)
+  otp          Int?
+  otpExpiresAt DateTime?  @default(now())
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  role         UserRole   @default(STUDENT)
+
+  // Tutor-specific fields merged into User model:
+  subject     String[]  @default([]) // Subjects tutor can teach, empty array if not a tutor
+  education     String?   @default("") // University or degree info
+  experience    Int?                   // Years of teaching experience
+  about           String?                // Short description about the tutor
+  availableDays String[]  @default([]) // Days tutor is available
+  availableTime String[]  @default([]) // Time slots tutor is available
+  rating       Float?    @default(0.0)
+  totalReviews Int?      @default(0)
+
+  // Relations for chat, rooms, reviews, notifications:
+  roomsSent             Room[]         @relation("SenderRelation")
+  roomsReceived         Room[]         @relation("ReceiverRelation")
+  chatsSent             Chat[]         @relation("SenderRelation")
+  chatsReceived         Chat[]         @relation("ReceiverRelation")
+  reviews               Review[]
+  notificationsSent     Notification[] @relation("Sender")
+  notificationsReceived Notification[] @relation("Receiver")
+
+  // Payments related to user as tutor:
+  tutorPayments Payment[] @relation("TutorPayments")
+
+  // Bookings where user is tutor or student:
+  tutorBookings   Booking[] @relation("TutorBookings")
+  studentBookings Booking[] @relation("StudentBookings")
 }
 
+model Payment {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  studentID      String?  @default("")
+  tutorID        String   @db.ObjectId
+  amountPaid     Float?   @default(0)
+  paymentMethod  String?  @default("")
+  paymentStatus  String?  @default("PENDING")
+  paymentDate    DateTime @default(now())
+  paymentGateway String?  @default("")
+  transactionId  String?  @default("")
+  invoice_pdf    String?  @default("")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
+  // Relation to tutor user:
+  tutor User @relation("TutorPayments", fields: [tutorID], references: [id])
 
+  // Booking relation handled on Booking side:
+  booking   Booking?
+  bookingId String? @db.ObjectId
+}
+
+model Booking {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  tutorId      String        @db.ObjectId
+  studentId    String        @db.ObjectId
+  subject      String
+  day          String
+  time         String
+  status       BookingStatus
+  createdAt    DateTime      @default(now())
+
+  payment      Payment?      @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  paymentId    String?       @unique @db.ObjectId
+
+  // Relations to users acting as tutor and student:
+  tutor   User @relation("TutorBookings", fields: [tutorId], references: [id])
+  student User @relation("StudentBookings", fields: [studentId], references: [id])
+}
 
 model Room {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -135,9 +120,9 @@ model Room {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  sender     User     @relation("SenderRelation", fields: [senderId], references: [id])
-  receiver   User     @relation("ReceiverRelation", fields: [receiverId], references: [id])
-  chat       Chat[]
+  sender   User @relation("SenderRelation", fields: [senderId], references: [id])
+  receiver User @relation("ReceiverRelation", fields: [receiverId], references: [id])
+  chat     Chat[]
 
   @@map("rooms")
 }
@@ -153,14 +138,12 @@ model Chat {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  sender     User   @relation("SenderRelation", fields: [senderId], references: [id])
-  receiver   User   @relation("ReceiverRelation", fields: [receiverId], references: [id])
-  room       Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender   User @relation("SenderRelation", fields: [senderId], references: [id])
+  receiver User @relation("ReceiverRelation", fields: [receiverId], references: [id])
+  room     Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@map("chats")
 }
-
-
 
 model Notification {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId

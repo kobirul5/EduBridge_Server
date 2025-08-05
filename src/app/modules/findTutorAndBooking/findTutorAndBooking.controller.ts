@@ -1,15 +1,34 @@
 
+import ApiError from '../../../errors/ApiErrors';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { findTutorAndBookingService } from './findTutorAndBooking.service';
 import httpStatus from 'http-status';
 
-const createFindTutorAndBooking = catchAsync(async (req, res) => {
 
-  
+// TODO: Create a service to handle features related to finding tutors and booking sessions
 
+
+
+const getFindTutorAndBooking = catchAsync(async (req, res) => {
 
   const result = await findTutorAndBookingService.getAllTurorsService();
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: 'FindTutorAndBooking created successfully!',
+    data: result,
+  });
+});
+
+const getTurorById = catchAsync(async (req, res) => {
+
+  const { id } = req.params;
+  if (!id) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID is required');
+  }
+
+  const result = await findTutorAndBookingService.getTurorByIdService(id);
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,
@@ -21,6 +40,7 @@ const createFindTutorAndBooking = catchAsync(async (req, res) => {
 
 
 export const findTutorAndBookingController = {
-  createFindTutorAndBooking,
+  getFindTutorAndBooking,
+  getTurorById
 
 };
