@@ -6,6 +6,8 @@ import { paymentRoutes } from "../modules/Payment/Payment.routes";
 import { userRoutes } from "../modules/User/user.route";
 import { likeRouter } from "../modules/Like/Like.routes";
 import { ReviewRoutes } from "../modules/Review/review.route";
+import { findTutorAndBookingRoutes } from "../modules/findTutorAndBooking/findTutorAndBooking.routes";
+
 
 
 const router = express.Router();
@@ -14,6 +16,10 @@ const moduleRoutes = [
   {
     path: "/users",
     route: userRoutes,
+  },
+  {
+    path: "/tutor-and-booking",
+    route: findTutorAndBookingRoutes
   },
   {
     path: "/auth",

@@ -36,7 +36,7 @@ model User {
 
   // ✅ Add this line:
   tutorPayments     Payment[]      @relation("TutorPayments")
-  tutor       Tutor?
+  tutor   Tutor?  @relation("UserToTutor")
 
   // Add this line for the Booking relation:
   tutorBookings     Booking[]      @relation("TutorBookings")
@@ -58,7 +58,7 @@ enum UserStatus {
 model Tutor {
   id             String    @id @default(auto()) @map("_id") @db.ObjectId
   userId         String   @unique @db.ObjectId
-  user           User      @relation(fields: [userId], references: [id])
+  user    User    @relation("UserToTutor", fields: [userId], references: [id])
 
   expertise      String[]  // Subjects the tutor can teach (e.g. ["Math", "Physics"])
   education      String?   // Optional: University name or degree info
