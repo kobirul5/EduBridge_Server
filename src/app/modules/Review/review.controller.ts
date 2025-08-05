@@ -4,20 +4,19 @@ import sendResponse from "../../../shared/sendResponse";
 import httpStatus from "http-status";
 import { reviewService } from "./review.service";
 
-export const createReview = catchAsync(async (req:Request, res: Response) => {
- console.log("req.body", "what aboute this line?", req.body);
- 
-    const userId = req.user.id;
-  console.log("userId", userId);
+ const createReview = catchAsync(async (req: Request, res: Response) => {
+
+
+  const studentId = req.user.id;
   const reviewData = req.body;
-console.log("reviewData", reviewData);
-  if (!userId) {
-      return res
-        .status(httpStatus.UNAUTHORIZED)
-        .json({ message: "User not authenticated" });
-    }
-    
-  const result = await reviewService.createReview(userId, reviewData);
+
+  if (!studentId) {
+    return res
+      .status(httpStatus.UNAUTHORIZED)
+      .json({ message: "User not authenticated" });
+  }
+
+  const result = await reviewService.createReviewService(studentId, reviewData);
 
   console.log("result", result);
 
@@ -29,7 +28,7 @@ console.log("reviewData", reviewData);
   });
 });
 
-export const getReviewsByEvent = catchAsync(async (req: Request, res: Response) => {
+ const getReviewsByEvent = catchAsync(async (req: Request, res: Response) => {
   const eventId = req.params.eventId;
   const result = await reviewService.getReviewsByEvent(eventId);
 
@@ -40,3 +39,9 @@ export const getReviewsByEvent = catchAsync(async (req: Request, res: Response) 
     data: result,
   });
 });
+
+
+export const reviewController = {
+  createReview,
+  getReviewsByEvent,
+};

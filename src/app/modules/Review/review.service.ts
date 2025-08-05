@@ -1,29 +1,36 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
-export const reviewService = {
-  async createReview(userId: string,payload: {
-    rating: number;
-    comment: string;
-    eventId: string;
-  }) {
-    return prisma.review.create({
-      data: {
-      userId,          
-      rating: payload.rating,      
-      comment: payload.comment,
-      eventId: payload.eventId,
-    }
-    });
-  },
 
-  async getReviewsByEvent(eventId: string) {
-    return prisma.review.findMany({
-      where: { eventId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        user: { select: { name: true, email: true } },
-      },
-    });
-  },
+
+const createReviewService = async (studentId: string, payload: {
+  rating: number;
+  comment: string;
+  tutorId: string;
+}) => {
+  const { rating, comment, tutorId } = payload;
+  if (!rating || !comment || !tutorId) {
+    throw new Error("Rating, comment, and tutor ID are required");
+  }
+
+
+  const review = await prisma.review.create({
+    data: {
+      rating,
+      comment,
+      studentId,
+      tutorId,
+    },
+  });
+  if (!review) {
+    throw new Error("Failed to create review");
+  }
+
+  return review;
 };
+
+
+
+export const reviewService = {
+  createReviewService,
+}

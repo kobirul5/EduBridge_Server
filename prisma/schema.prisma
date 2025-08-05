@@ -61,7 +61,6 @@ model User {
   roomsReceived         Room[]         @relation("ReceiverRelation")
   chatsSent             Chat[]         @relation("SenderRelation")
   chatsReceived         Chat[]         @relation("ReceiverRelation")
-  reviews               Review[]
   notificationsSent     Notification[] @relation("Sender")
   notificationsReceived Notification[] @relation("Receiver")
 
@@ -73,6 +72,10 @@ model User {
   studentBookings      Booking[]    @relation("StudentBookings")
   savedStudent SavedTutor[] @relation("SavedTutorStudent")
   savedTutor   SavedTutor[] @relation("SavedTutorTutor")
+
+  //reviews where user is student or tutor:
+  studentReviewer Review[] @relation("ReviewerStudent")
+  tutorReview   Review[] @relation("ReviewTutor")
 }
 
 model SavedTutor {
@@ -176,13 +179,17 @@ model Notification {
 
 model Review {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  rating    Int
-  comment   String
+
+  studentId String   @db.ObjectId
+  student   User     @relation("ReviewerStudent", fields: [studentId], references: [id], onDelete: Cascade)
+
+  tutorId   String   @db.ObjectId
+  tutor     User     @relation("ReviewTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+
+  rating    Int     @default(0)
+  comment   String  @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("reviews")
 }
