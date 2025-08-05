@@ -31,12 +31,12 @@ const getAllTurorsService = async () => {
   });
 
   if (!tutors || tutors.length === 0) {
-   throw new ApiError(httpStatus.NOT_FOUND,"No tutors found");
+    throw new ApiError(httpStatus.NOT_FOUND, "No tutors found");
   }
   return tutors;
 }
 
-const getTurorByIdService = async (id:string) => {
+const getTurorByIdService = async (id: string) => {
 
   const tutors = await prisma.user.findMany({
     where: { id: id, role: UserRole.TUTOR },
@@ -58,11 +58,11 @@ const getTurorByIdService = async (id:string) => {
   });
 
   if (!tutors || tutors.length === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND,"No tutor found");
+    throw new ApiError(httpStatus.NOT_FOUND, "No tutor found");
   }
   return tutors;
 }
-
+// Save a tutor for a student
 const saveTutorService = async (tutorId: string, studentId: string) => {
 
 
@@ -90,10 +90,43 @@ const saveTutorService = async (tutorId: string, studentId: string) => {
   return savedTutor;
 }
 
+// delete a saved tutor
+const deleteSavedTutorService = async (tutorId: string, studentId: string) => {
+
+
+
+
+  const existingSavedTutor = await prisma.savedTutor.findFirst({
+    where: {
+      tutorId: tutorId,
+      studentId: studentId,
+    },
+  });
+
+  if (!existingSavedTutor) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Saved tutor not found");
+  }
+
+  const deletedSavedTutor = await prisma.savedTutor.delete({
+    where: {
+      studentId_tutorId: {
+        studentId: studentId,
+        tutorId: tutorId,
+      }
+    }
+  });
+
+
+  if (!deletedSavedTutor) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to delete saved tutor");
+  }
+  return deletedSavedTutor;
+}
 
 export const findTutorAndBookingService = {
   getAllTurorsService,
   getTurorByIdService,
-  saveTutorService
+  saveTutorService,
+  deleteSavedTutorService,
 
 };

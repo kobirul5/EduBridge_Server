@@ -8,6 +8,6 @@ const router = Router();
 router.get('/tutors', auth(), findTutorAndBookingController.getFindTutorAndBooking);
 router.get('/tutor/:id', auth(), findTutorAndBookingController.getTurorById);
 router.post('/save-tutor/:id', auth(), findTutorAndBookingController.saveTutor);
-
+router.delete('/delete-save-tutor/:id', auth(), findTutorAndBookingController.deleteSavedTutor);
 
 export const findTutorAndBookingRoutes = router;
