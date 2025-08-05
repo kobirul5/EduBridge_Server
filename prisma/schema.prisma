@@ -74,7 +74,7 @@ model User {
   savedTutor   SavedTutor[] @relation("SavedTutorTutor")
 
   //reviews where user is student or tutor:
-  studentReviewer Review[] @relation("ReviewerStudent")
+  studentReviewes Review[] @relation("ReviewerStudent")
   tutorReview   Review[] @relation("ReviewTutor")
 }
 
@@ -116,11 +116,12 @@ model Booking {
   id        String        @id @default(auto()) @map("_id") @db.ObjectId
   tutorId   String        @db.ObjectId
   studentId String        @db.ObjectId
-  subject   String
-  day       String
-  time      String
-  status    BookingStatus
+  subject   String  @default("")
+  date      DateTime 
+  bookingsStatus    BookingStatus @default(PENDING)
+  isAccepted Boolean @default(false)
   createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 
   payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   paymentId String?  @unique @db.ObjectId
@@ -129,6 +130,9 @@ model Booking {
   tutor   User @relation("TutorBookings", fields: [tutorId], references: [id])
   student User @relation("StudentBookings", fields: [studentId], references: [id])
 }
+
+
+
 
 model Room {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId

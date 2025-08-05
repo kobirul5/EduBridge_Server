@@ -21,7 +21,7 @@ const getAllTurorsService = async () => {
       subject: true,
       rating: true,
       role: true,
-      studentReviewer: true,
+      studentReviewes: true,
       profileImage: true,
       education: true,
       experience: true,
@@ -36,10 +36,9 @@ const getAllTurorsService = async () => {
   return tutors;
 }
 
-const getTurorByIdService = async (id: string) => {
-
-  const tutors = await prisma.user.findMany({
-    where: { id: id, role: UserRole.TUTOR },
+const getTutorByIdService = async (id: string) => {
+  const user = await prisma.user.findUnique({
+    where: { id },
     select: {
       id: true,
       fullName: true,
@@ -47,21 +46,23 @@ const getTurorByIdService = async (id: string) => {
       hourlyRate: true,
       subject: true,
       rating: true,
-      studentReviewer: true,
+      studentReviewes: true,
       role: true,
       profileImage: true,
       education: true,
       experience: true,
       about: true,
       createdAt: true,
-    }
+    },
   });
 
-  if (!tutors || tutors.length === 0) {
+  if (!user || user.role !== UserRole.TUTOR) {
     throw new ApiError(httpStatus.NOT_FOUND, "No tutor found");
   }
-  return tutors;
-}
+
+  return user;
+};
+
 // Save a tutor for a student
 const saveTutorService = async (tutorId: string, studentId: string) => {
 
@@ -123,10 +124,36 @@ const deleteSavedTutorService = async (tutorId: string, studentId: string) => {
   return deletedSavedTutor;
 }
 
+const createBookingService = async (tutorId: string, studentId: string, date: Date, subject: string) => {
+
+  if (!tutorId || !date || !subject) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID, date and time are required');
+  }
+  if (!studentId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
+  }
+
+
+  const booking = await prisma.booking.create({
+    data: {
+      tutorId: tutorId,
+      studentId: studentId,
+      date: date,
+      subject: subject,
+    },
+  });
+
+  if (!booking) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to create booking");
+  }
+  return booking;
+}
+
 export const findTutorAndBookingService = {
   getAllTurorsService,
-  getTurorByIdService,
+  getTutorByIdService,
   saveTutorService,
   deleteSavedTutorService,
+  createBookingService 
 
 };

@@ -9,6 +9,6 @@ import { reviewController } from "./review.controller";
 const router = express.Router();
 
 router.post("/",auth(), reviewController.createReview);
-router.get("/event/:eventId",auth(), reviewController.getReviewsByEvent);
+// router.get("/event/:eventId",auth(), reviewController.getReviewsByEvent);
 
 export const ReviewRoutes = router;

@@ -29,7 +29,7 @@ const getTurorById = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID is required');
   }
 
-  const result = await findTutorAndBookingService.getTurorByIdService(id);
+  const result = await findTutorAndBookingService.getTutorByIdService(id);
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,
@@ -79,11 +79,24 @@ const deleteSavedTutor = catchAsync(async (req, res) => {
   });
 });
 
+const createBooking = catchAsync(async (req, res) => {
+  const { tutorId, date, subject } = req.body;
+  const studentId = req.user.id;
+
+
+  const result = await findTutorAndBookingService.createBookingService(tutorId, studentId, date, subject);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: 'Booking created successfully!',
+    data: result,
+  });
+});
 
 export const findTutorAndBookingController = {
   getFindTutorAndBooking,
   getTurorById,
   saveTutor,
   deleteSavedTutor,
-
+  createBooking
 };
