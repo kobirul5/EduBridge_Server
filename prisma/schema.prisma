@@ -27,34 +27,34 @@ enum BookingStatus {
 }
 
 model User {
-  id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  fullName     String?    @default("")
-  email        String     @unique
-  phoneNumber  String?    @default("")
-  password     String
-  gender       String?    @default("")
-  city         String?    @default("")
-  status       UserStatus @default(ACTIVE)
-  fcmToken     String?    @default("")
-  profileImage String?    @default("")
-  hourlyRate   Float?     @default(0.0)
-  isTutorRequest  Boolean @default(false)
-  isTutorApproved Boolean @default(false)
-  otp          Int?
-  otpExpiresAt DateTime?  @default(now())
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  role         UserRole   @default(STUDENT)
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  fullName        String?    @default("")
+  email           String     @unique
+  phoneNumber     String?    @default("")
+  password        String
+  gender          String?    @default("")
+  city            String?    @default("")
+  status          UserStatus @default(ACTIVE)
+  fcmToken        String?    @default("")
+  profileImage    String?    @default("")
+  hourlyRate      Float?     @default(0.0)
+  isTutorRequest  Boolean    @default(false)
+  isTutorApproved Boolean    @default(false)
+  otp             Int?
+  otpExpiresAt    DateTime?  @default(now())
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  role            UserRole   @default(STUDENT)
 
   // Tutor-specific fields merged into User model:
-  subject     String[]  @default([]) // Subjects tutor can teach, empty array if not a tutor
-  education     String?   @default("") // University or degree info
-  experience    Int?                   // Years of teaching experience
-  about           String?                // Short description about the tutor
-  availableDays String[]  @default([]) // Days tutor is available
-  availableTime String[]  @default([]) // Time slots tutor is available
-  rating       Float?    @default(0.0)
-  totalReviews Int?      @default(0)
+  subject       String[] @default([]) // Subjects tutor can teach, empty array if not a tutor
+  education     String?  @default("") // University or degree info
+  experience    Int? // Years of teaching experience
+  about         String? // Short description about the tutor
+  availableDays String[] @default([]) // Days tutor is available
+  availableTime String[] @default([]) // Time slots tutor is available
+  rating        Float?   @default(0.0)
+  totalReviews  Int?     @default(0)
 
   // Relations for chat, rooms, reviews, notifications:
   roomsSent             Room[]         @relation("SenderRelation")
@@ -69,8 +69,22 @@ model User {
   tutorPayments Payment[] @relation("TutorPayments")
 
   // Bookings where user is tutor or student:
-  tutorBookings   Booking[] @relation("TutorBookings")
-  studentBookings Booking[] @relation("StudentBookings")
+  tutorBookings        Booking[]    @relation("TutorBookings")
+  studentBookings      Booking[]    @relation("StudentBookings")
+  savedStudent SavedTutor[] @relation("SavedTutorStudent")
+  savedTutor   SavedTutor[] @relation("SavedTutorTutor")
+}
+
+model SavedTutor {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  studentId String @db.ObjectId
+  student   User   @relation("SavedTutorStudent", fields: [studentId], references: [id], onDelete: Cascade)
+
+  tutorId String @db.ObjectId
+  tutor   User   @relation("SavedTutorTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, tutorId])
 }
 
 model Payment {
@@ -92,21 +106,21 @@ model Payment {
 
   // Booking relation handled on Booking side:
   booking   Booking?
-  bookingId String? @db.ObjectId
+  bookingId String?  @db.ObjectId
 }
 
 model Booking {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  tutorId      String        @db.ObjectId
-  studentId    String        @db.ObjectId
-  subject      String
-  day          String
-  time         String
-  status       BookingStatus
-  createdAt    DateTime      @default(now())
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  tutorId   String        @db.ObjectId
+  studentId String        @db.ObjectId
+  subject   String
+  day       String
+  time      String
+  status    BookingStatus
+  createdAt DateTime      @default(now())
 
-  payment      Payment?      @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  paymentId    String?       @unique @db.ObjectId
+  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  paymentId String?  @unique @db.ObjectId
 
   // Relations to users acting as tutor and student:
   tutor   User @relation("TutorBookings", fields: [tutorId], references: [id])
@@ -120,8 +134,8 @@ model Room {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  sender   User @relation("SenderRelation", fields: [senderId], references: [id])
-  receiver User @relation("ReceiverRelation", fields: [receiverId], references: [id])
+  sender   User   @relation("SenderRelation", fields: [senderId], references: [id])
+  receiver User   @relation("ReceiverRelation", fields: [receiverId], references: [id])
   chat     Chat[]
 
   @@map("rooms")

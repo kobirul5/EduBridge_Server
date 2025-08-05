@@ -35,6 +35,7 @@ const getAllTurorsService = async () => {
   }
   return tutors;
 }
+
 const getTurorByIdService = async (id:string) => {
 
   const tutors = await prisma.user.findMany({
@@ -62,10 +63,37 @@ const getTurorByIdService = async (id:string) => {
   return tutors;
 }
 
+const saveTutorService = async (tutorId: string, studentId: string) => {
+
+
+  const existingSavedTutor = await prisma.savedTutor.findFirst({
+    where: {
+      tutorId: tutorId,
+      studentId: studentId,
+    },
+  });
+
+  if (existingSavedTutor) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Tutor already saved");
+  }
+
+  const savedTutor = await prisma.savedTutor.create({
+    data: {
+      tutorId: tutorId,
+      studentId: studentId,
+    },
+  });
+
+  if (!savedTutor) {
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to save tutor");
+  }
+  return savedTutor;
+}
 
 
 export const findTutorAndBookingService = {
   getAllTurorsService,
-  getTurorByIdService
+  getTurorByIdService,
+  saveTutorService
 
 };
