@@ -211,8 +211,8 @@ export function setupWebSocket(server: Server) {
                   },
                 },
                 select: {
-                  photos: true,
-                  name: true,
+                  profileImage: true,
+                  fullName: true,
                   id: true,
                   // interest: true,
                   // favoritesFood:true,
@@ -263,112 +263,112 @@ export function setupWebSocket(server: Server) {
             break;
           }
 
-          case "groupMessage": {
-            const {groupId, message, images} = parsedData;
+          // case "groupMessage": {
+          //   const {groupId, message, images} = parsedData;
 
-            if (!ws.userId || !groupId || !message) {
-              console.log("Invalid group message payload");
-              return;
-            }
+          //   if (!ws.userId || !groupId || !message) {
+          //     console.log("Invalid group message payload");
+          //     return;
+          //   }
 
-            // Check if the group exists
-            const isMember = await prisma.groupMember.findFirst({
-              where: {
-                groupId,
-                userId: ws.userId,
-              },
-            });
+          //   // Check if the group exists
+          //   const isMember = await prisma.groupMember.findFirst({
+          //     where: {
+          //       groupId,
+          //       userId: ws.userId,
+          //     },
+          //   });
 
-            if(!isMember){
-              ws.send(JSON.stringify({
-                event: "error",
-                message: "You are not a member of this group",
-              })
-            );
-              return;
-            }
+          //   if(!isMember){
+          //     ws.send(JSON.stringify({
+          //       event: "error",
+          //       message: "You are not a member of this group",
+          //     })
+          //   );
+          //     return;
+          //   }
 
-            //create group message
-            const newMessage = await prisma.groupMessage.create({
-              data: {
-                groupId,
-                senderId: isMember.id,
-                message,
-                images: images || [],
-              },
-              include: {
-                sender: true,
-              }
-            });
+          //   //create group message
+          //   const newMessage = await prisma.groupMessage.create({
+          //     data: {
+          //       groupId,
+          //       senderId: isMember.id,
+          //       message,
+          //       images: images || [],
+          //     },
+          //     include: {
+          //       sender: true,
+          //     }
+          //   });
 
-            // Broadcast the message to all group members
-            const groupMembers = await prisma.groupMember.findMany({
-              where: {
-                groupId,
-              },
-              select: {
-                userId: true,
-              },
-            });
+          //   // Broadcast the message to all group members
+          //   const groupMembers = await prisma.groupMember.findMany({
+          //     where: {
+          //       groupId,
+          //     },
+          //     select: {
+          //       userId: true,
+          //     },
+          //   });
 
-            groupMembers.forEach(({userId})=> {
-              const socket = userSockets.get(userId);
-              if(socket) {
-                socket.send(
-                  JSON.stringify({
-                    event: "groupMessage",
-                    data: newMessage,
-                  })
-                );
-              }
-            });
-            break;
-          }
+          //   groupMembers.forEach(({userId})=> {
+          //     const socket = userSockets.get(userId);
+          //     if(socket) {
+          //       socket.send(
+          //         JSON.stringify({
+          //           event: "groupMessage",
+          //           data: newMessage,
+          //         })
+          //       );
+          //     }
+          //   });
+          //   break;
+          // }
 
-          case "fetchGroupMessages": {
-            const {groupId} = parsedData;
+          // case "fetchGroupMessages": {
+          //   const {groupId} = parsedData;
 
-            if(!ws.userId || !groupId){
-              return ;
-            }
+          //   if(!ws.userId || !groupId){
+          //     return ;
+          //   }
 
-            const isMember = await prisma.groupMember.findFirst({
-              where: {
-                groupId,
-                userId: ws.userId,
-              },
-            });
+          //   const isMember = await prisma.groupMember.findFirst({
+          //     where: {
+          //       groupId,
+          //       userId: ws.userId,
+          //     },
+          //   });
 
-            if(!isMember){
-              ws.send(
-                JSON.stringify({
-                  event: "error",
-                  message: "You are not a member of this group",
-                })
-              );
-              return;
-            }
+          //   if(!isMember){
+          //     ws.send(
+          //       JSON.stringify({
+          //         event: "error",
+          //         message: "You are not a member of this group",
+          //       })
+          //     );
+          //     return;
+          //   }
 
-            const messages = await prisma.groupMessage.findMany({
-              where: {
-                groupId,
-              },
-              orderBy: {
-                createdAt: "asc",
-              },
-              include: {
-                sender: true,
-              },
-            });
+          //   const messages = await prisma.groupMessage.findMany({
+          //     where: {
+          //       groupId,
+          //     },
+          //     orderBy: {
+          //       createdAt: "asc",
+          //     },
+          //     include: {
+          //       sender: true,
+          //     },
+          //   });
 
-            ws.send(
-              JSON.stringify({
-                event: "fetchGroupMessages",
-                data: messages,
-              })
-            );
-            break;
-          }
+          //   ws.send(
+          //     JSON.stringify({
+          //       event: "fetchGroupMessages",
+          //       data: messages,
+          //     })
+          //   );
+          //   break;
+          // }
 
           default:
             console.log("Unknown event type:", parsedData.event);

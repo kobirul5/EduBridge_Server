@@ -7,6 +7,7 @@ import { userRoutes } from "../modules/User/user.route";
 import { likeRouter } from "../modules/Like/Like.routes";
 import { ReviewRoutes } from "../modules/Review/review.route";
 import { findTutorAndBookingRoutes } from "../modules/findTutorAndBooking/findTutorAndBooking.routes";
+import { chatImageRoutes } from "../modules/chatImages/chatImages.routes";
 
 
 
@@ -45,6 +46,10 @@ const moduleRoutes = [
   {
     path: "/reviews",
     route: ReviewRoutes,
+  },
+  {
+    path: "/chat-images",
+    route: chatImageRoutes,
   },
 
 ];
