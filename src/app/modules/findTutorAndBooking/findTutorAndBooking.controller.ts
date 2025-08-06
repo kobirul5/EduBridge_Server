@@ -107,6 +107,24 @@ const acceptOrCancelledBookingRequest = catchAsync(async (req:Request, res:Respo
   });
 });
 
+
+
+const getAcceptedBookingForTutor = catchAsync(async (req, res) => {
+  const tutorId = req.user.id;
+  const result = await findTutorAndBookingService.getBookingRequestForTutorService(tutorId);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Accepted bookings retrieved successfully!',
+    data: result,
+  });
+});
+
+
+
+
+
+
 export const findTutorAndBookingController = {
   getFindTutorAndBooking,
   getTurorById,
@@ -114,4 +132,6 @@ export const findTutorAndBookingController = {
   findDailyscheduleAndBooking,
   getBookingRequestForTutor,
   acceptOrCancelledBookingRequest,
+  getAcceptedBookingForTutor,
+  
 };

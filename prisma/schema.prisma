@@ -68,14 +68,14 @@ model User {
   tutorPayments Payment[] @relation("TutorPayments")
 
   // Bookings where user is tutor or student:
-  tutorBookings        Booking[]    @relation("TutorBookings")
-  studentBookings      Booking[]    @relation("StudentBookings")
-  savedStudent SavedTutor[] @relation("SavedTutorStudent")
-  savedTutor   SavedTutor[] @relation("SavedTutorTutor")
+  tutorBookings   Booking[]    @relation("TutorBookings")
+  studentBookings Booking[]    @relation("StudentBookings")
+  savedStudent    SavedTutor[] @relation("SavedTutorStudent")
+  savedTutor      SavedTutor[] @relation("SavedTutorTutor")
 
   //reviews where user is student or tutor:
   studentReviewes Review[] @relation("ReviewerStudent")
-  tutorReview   Review[] @relation("ReviewTutor")
+  tutorReview     Review[] @relation("ReviewTutor")
 }
 
 model SavedTutor {
@@ -104,37 +104,32 @@ model Payment {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  // Relation to tutor user:
+  // Tutor relation
   tutor User @relation("TutorPayments", fields: [tutorID], references: [id])
 
-  // Booking relation handled on Booking side:
-  booking   Booking?
-  bookingId String?  @db.ObjectId
+  // Booking relation (foreign key is stored here)
+  bookingId String  @unique @db.ObjectId
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
 model Booking {
-  id        String        @id @default(auto()) @map("_id") @db.ObjectId
-  tutorId   String        @db.ObjectId
-  studentId String        @db.ObjectId
-  subject   String  @default("")
-  date      DateTime 
-  startTime DateTime
-  endTime   DateTime
-  bookingsStatus    BookingStatus @default(PENDING)
-  isAccepted Boolean @default(false)
-  createdAt DateTime      @default(now())
-  updatedAt DateTime      @updatedAt
-
-  payment   Payment? @relation(fields: [paymentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  paymentId String?  @unique @db.ObjectId
-
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  tutorId        String        @db.ObjectId
+  studentId      String        @db.ObjectId
+  subject        String        @default("")
+  date           DateTime
+  startTime      DateTime
+  endTime        DateTime
+  bookingsStatus BookingStatus @default(PENDING)
+  isAccepted     Boolean       @default(false)
+  isPaymentDone  Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
   // Relations to users acting as tutor and student:
-  tutor   User @relation("TutorBookings", fields: [tutorId], references: [id])
-  student User @relation("StudentBookings", fields: [studentId], references: [id])
+  tutor   User     @relation("TutorBookings", fields: [tutorId], references: [id])
+  student User     @relation("StudentBookings", fields: [studentId], references: [id])
+  Payment Payment?
 }
-
-
-
 
 model Room {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -184,16 +179,16 @@ model Notification {
 }
 
 model Review {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  studentId String   @db.ObjectId
-  student   User     @relation("ReviewerStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String @db.ObjectId
+  student   User   @relation("ReviewerStudent", fields: [studentId], references: [id], onDelete: Cascade)
 
-  tutorId   String   @db.ObjectId
-  tutor     User     @relation("ReviewTutor", fields: [tutorId], references: [id], onDelete: Cascade)
+  tutorId String @db.ObjectId
+  tutor   User   @relation("ReviewTutor", fields: [tutorId], references: [id], onDelete: Cascade)
 
-  rating    Int     @default(0)
-  comment   String  @default("")
+  rating    Int      @default(0)
+  comment   String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

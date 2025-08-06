@@ -74,7 +74,7 @@ endTime:Date) => {
   if (!studentId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
   }
-
+console.log("tutorId", tutorId, date, subject, startTime, endTime, studentId , "---------------------------");
 
   const booking = await prisma.booking.create({
     data: {
@@ -114,7 +114,7 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
           hourlyRate: true,
         }
       },
-      payment: true,
+      // Payment:true
     },
   });
 
@@ -133,7 +133,7 @@ const getBookingRequestService = async (tutorId: string) => {
   console.log("tutorId", tutorId);
 
   const bookingRequests = await prisma.booking.findMany({
-    where: { tutorId: tutorId , NOT: { bookingsStatus: BookingStatus.CANCELLED } },
+    where: { tutorId: tutorId , bookingsStatus: BookingStatus.PENDING },
     include: {
       student: {
         select: {
@@ -167,6 +167,32 @@ const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsSt
 }
 
 
+// get accepted booking for a tutor
+const getBookingRequestForTutorService = async (tutorId: string) => {
+  if (!tutorId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token'); 
+  }
+
+  const acceptedBookings = await prisma.booking.findMany({
+    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED , isPaymentDone: true },
+    include: {
+      student: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true,
+        }
+      },
+    },
+  });
+
+
+return acceptedBookings;
+
+
+}
+
 export const findTutorAndBookingService = {
   getAllTurorsService,
   getTutorByIdService,
@@ -174,5 +200,6 @@ export const findTutorAndBookingService = {
   getDailyScheduleAndBookingService, 
   getBookingRequestService,
   acceptOrRejectBookingRequestService,
+  getBookingRequestForTutorService,
 
 };
