@@ -1,9 +1,11 @@
 
+import { BookingStatus } from '@prisma/client';
 import ApiError from '../../../errors/ApiErrors';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
 import { findTutorAndBookingService } from './findTutorAndBooking.service';
 import httpStatus from 'http-status';
+import { Request, Response } from 'express';
 
 
 // TODO: Create a service to handle features related to finding tutors and booking sessions
@@ -65,10 +67,51 @@ const findDailyscheduleAndBooking = catchAsync(async (req, res) => {
   });
 });
 
+// booking request for tutor
+
+const getBookingRequestForTutor = catchAsync(async (req, res) => {
+  const tutorId = req.user.id;
+  const result = await findTutorAndBookingService.getBookingRequestService(tutorId);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Booking requests retrieved successfully!',
+    data: result,
+  });
+});
+
+
+// accpet boioking request by booking id
+
+const acceptOrCancelledBookingRequest = catchAsync(async (req:Request, res:Response) => {
+  const { bookingId } = req.params;
+  if (!bookingId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
+  } 
+
+  console.log(BookingStatus, req.body);
+
+  const data = req.body;
+  if (!data.bookingStatus  || (data.bookingStatus !== BookingStatus.CONFIRMED && data.bookingStatus !== BookingStatus.CANCELLED)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Booking status is required and must be either 'CONFIRMED' or 'CANCELLED'");
+  }
+
+
+
+  const result = await findTutorAndBookingService.acceptOrRejectBookingRequestService(bookingId, data.bookingStatus);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Booking request accepted successfully!',
+    data: result,
+  });
+});
 
 export const findTutorAndBookingController = {
   getFindTutorAndBooking,
   getTurorById,
   createBooking,
-  findDailyscheduleAndBooking
+  findDailyscheduleAndBooking,
+  getBookingRequestForTutor,
+  acceptOrCancelledBookingRequest,
 };

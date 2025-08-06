@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { BookingStatus, UserRole } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
@@ -99,7 +99,7 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
   }
 
   const bookings = await prisma.booking.findMany({
-    where: { studentId: studentId },
+    where: { studentId: studentId, NOT: { bookingsStatus: BookingStatus.CANCELLED } },
     include: {  
       tutor: {
         select: {
@@ -124,10 +124,55 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
   return bookings;
 }
 
+// get booking request for a tutor
+const getBookingRequestService = async (tutorId: string) => {
+  if (!tutorId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
+  }
+
+  console.log("tutorId", tutorId);
+
+  const bookingRequests = await prisma.booking.findMany({
+    where: { tutorId: tutorId , NOT: { bookingsStatus: BookingStatus.CANCELLED } },
+    include: {
+      student: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true,
+        }
+      },
+    },
+  });
+
+
+  return bookingRequests;
+}
+
+// accept or reject booking request
+
+const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsStatus: BookingStatus) => {
+  if (!bookingId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
+  }
+  const booking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: { bookingsStatus: bookingsStatus },
+  });
+  if (!booking) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+  }
+  return booking;
+}
+
+
 export const findTutorAndBookingService = {
   getAllTurorsService,
   getTutorByIdService,
   createBookingService,
   getDailyScheduleAndBookingService, 
+  getBookingRequestService,
+  acceptOrRejectBookingRequestService,
 
 };

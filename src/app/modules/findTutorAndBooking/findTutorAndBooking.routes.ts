@@ -11,5 +11,9 @@ router.get('/tutor/:id', auth(), findTutorAndBookingController.getTurorById);
 router.post('/booking', auth(), findTutorAndBookingController.createBooking);
 router.get('/daily-schedule', auth(), findTutorAndBookingController.findDailyscheduleAndBooking);
 
+// booking request for tutor
+router.get('/booking-requests', auth(), findTutorAndBookingController.getBookingRequestForTutor);
+router.put('/booking/:bookingId', auth(), findTutorAndBookingController.acceptOrCancelledBookingRequest);
+
 
 export const findTutorAndBookingRoutes = router;
