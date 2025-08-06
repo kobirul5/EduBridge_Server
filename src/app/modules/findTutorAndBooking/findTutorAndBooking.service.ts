@@ -63,66 +63,7 @@ const getTutorByIdService = async (id: string) => {
   return user;
 };
 
-// Save a tutor for a student
-const saveTutorService = async (tutorId: string, studentId: string) => {
 
-
-  const existingSavedTutor = await prisma.savedTutor.findFirst({
-    where: {
-      tutorId: tutorId,
-      studentId: studentId,
-    },
-  });
-
-  if (existingSavedTutor) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Tutor already saved");
-  }
-
-  const savedTutor = await prisma.savedTutor.create({
-    data: {
-      tutorId: tutorId,
-      studentId: studentId,
-    },
-  });
-
-  if (!savedTutor) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to save tutor");
-  }
-  return savedTutor;
-}
-
-// delete a saved tutor
-const deleteSavedTutorService = async (tutorId: string, studentId: string) => {
-
-
-
-
-  const existingSavedTutor = await prisma.savedTutor.findFirst({
-    where: {
-      tutorId: tutorId,
-      studentId: studentId,
-    },
-  });
-
-  if (!existingSavedTutor) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Saved tutor not found");
-  }
-
-  const deletedSavedTutor = await prisma.savedTutor.delete({
-    where: {
-      studentId_tutorId: {
-        studentId: studentId,
-        tutorId: tutorId,
-      }
-    }
-  });
-
-
-  if (!deletedSavedTutor) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to delete saved tutor");
-  }
-  return deletedSavedTutor;
-}
 
 const createBookingService = async (tutorId: string, studentId: string, date: Date, subject: string) => {
 
@@ -152,8 +93,6 @@ const createBookingService = async (tutorId: string, studentId: string, date: Da
 export const findTutorAndBookingService = {
   getAllTurorsService,
   getTutorByIdService,
-  saveTutorService,
-  deleteSavedTutorService,
   createBookingService 
 
 };

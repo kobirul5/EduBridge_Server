@@ -39,45 +39,6 @@ const getTurorById = catchAsync(async (req, res) => {
 });
 
 
-const saveTutor = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const studentId = req.user.id;
-  if (!id) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID is required');
-  }
-  if (!studentId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
-  }
-
-
-  const result = await findTutorAndBookingService.saveTutorService(id, studentId);
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.CREATED,
-    message: 'Tutor saved successfully!',
-    data: result,
-  });
-
-
-})
-
-const deleteSavedTutor = catchAsync(async (req, res) => {
-  const { id } = req.params;
-  const studentId = req.user.id;
-  if (!id) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID is required');
-  }
-  if (!studentId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
-  }
-  const result = await findTutorAndBookingService.deleteSavedTutorService(id, studentId);
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.OK,
-    message: 'Tutor deleted successfully!',
-    data: result,
-  });
-});
 
 const createBooking = catchAsync(async (req, res) => {
   const { tutorId, date, subject } = req.body;
@@ -96,7 +57,5 @@ const createBooking = catchAsync(async (req, res) => {
 export const findTutorAndBookingController = {
   getFindTutorAndBooking,
   getTurorById,
-  saveTutor,
-  deleteSavedTutor,
   createBooking
 };
