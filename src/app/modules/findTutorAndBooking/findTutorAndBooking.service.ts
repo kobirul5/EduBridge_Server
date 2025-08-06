@@ -65,9 +65,10 @@ const getTutorByIdService = async (id: string) => {
 
 
 
-const createBookingService = async (tutorId: string, studentId: string, date: Date, subject: string) => {
+const createBookingService = async (tutorId: string, studentId: string, date: Date, subject: string, startTime: Date,
+endTime:Date) => {
 
-  if (!tutorId || !date || !subject) {
+  if (!tutorId || !date || !subject || !startTime || !endTime) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID, date and time are required');
   }
   if (!studentId) {
@@ -81,6 +82,8 @@ const createBookingService = async (tutorId: string, studentId: string, date: Da
       studentId: studentId,
       date: date,
       subject: subject,
+      startTime: startTime,
+      endTime: endTime,
     },
   });
 
@@ -89,10 +92,42 @@ const createBookingService = async (tutorId: string, studentId: string, date: Da
   }
   return booking;
 }
+// get daily schedule and booking for a student
+const getDailyScheduleAndBookingService = async (studentId: string) => {
+  if (!studentId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
+  }
+
+  const bookings = await prisma.booking.findMany({
+    where: { studentId: studentId },
+    include: {  
+      tutor: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          profileImage: true,
+          about: true,
+          subject: true,
+          rating: true,
+          experience: true,
+          hourlyRate: true,
+        }
+      },
+      payment: true,
+    },
+  });
+
+  if (!bookings || bookings.length === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "No bookings found");
+  }
+  return bookings;
+}
 
 export const findTutorAndBookingService = {
   getAllTurorsService,
   getTutorByIdService,
-  createBookingService 
+  createBookingService,
+  getDailyScheduleAndBookingService, 
 
 };

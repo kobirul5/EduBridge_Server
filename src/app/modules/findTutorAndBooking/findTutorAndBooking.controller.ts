@@ -41,11 +41,11 @@ const getTurorById = catchAsync(async (req, res) => {
 
 
 const createBooking = catchAsync(async (req, res) => {
-  const { tutorId, date, subject } = req.body;
+  const { tutorId, date, subject, startTime, endTime } = req.body;
   const studentId = req.user.id;
 
 
-  const result = await findTutorAndBookingService.createBookingService(tutorId, studentId, date, subject);
+  const result = await findTutorAndBookingService.createBookingService(tutorId, studentId, date, subject, startTime, endTime);
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,
@@ -54,8 +54,21 @@ const createBooking = catchAsync(async (req, res) => {
   });
 });
 
+const findDailyscheduleAndBooking = catchAsync(async (req, res) => {
+  const studentId = req.user.id;
+  const result = await findTutorAndBookingService.getDailyScheduleAndBookingService(studentId);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Daily schedule and booking retrieved successfully!',
+    data: result,
+  });
+});
+
+
 export const findTutorAndBookingController = {
   getFindTutorAndBooking,
   getTurorById,
-  createBooking
+  createBooking,
+  findDailyscheduleAndBooking
 };

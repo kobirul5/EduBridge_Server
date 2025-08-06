@@ -118,6 +118,8 @@ model Booking {
   studentId String        @db.ObjectId
   subject   String  @default("")
   date      DateTime 
+  startTime DateTime
+  endTime   DateTime
   bookingsStatus    BookingStatus @default(PENDING)
   isAccepted Boolean @default(false)
   createdAt DateTime      @default(now())

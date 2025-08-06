@@ -9,6 +9,7 @@ router.get('/tutors', auth(), findTutorAndBookingController.getFindTutorAndBooki
 router.get('/tutor/:id', auth(), findTutorAndBookingController.getTurorById);
 // booking routes
 router.post('/booking', auth(), findTutorAndBookingController.createBooking);
+router.get('/daily-schedule', auth(), findTutorAndBookingController.findDailyscheduleAndBooking);
 
 
 export const findTutorAndBookingRoutes = router;
