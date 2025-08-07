@@ -10,7 +10,7 @@ import { jwtHelpers } from "../../../helpars/jwtHelpers";
 import { IUser } from "./user.interface";
 
 
-const createUserIntoDb = async (userData: {email: string, password:string, role:any}) => {
+const createUserIntoDb = async (userData: { email: string, password: string, role: any }) => {
 
   console.log("Creating user with data:", userData);
 
@@ -27,16 +27,16 @@ const createUserIntoDb = async (userData: {email: string, password:string, role:
 
   // hash password
   const hashedPassword = await bcrypt.hash(userData.password, Number(config.bcrypt_salt_rounds));
-  
 
-    const dataToSave = {
+
+  const dataToSave = {
     email: userData.email,
     password: hashedPassword,
     role: userData.role === 'TUTOR' ? 'STUDENT' : userData.role,
     isTutorRequest: userData.role === 'TUTOR',
     isTutorApproved: false,
   };
-  
+
   // create user
   const newUser = await prisma.user.create({
     data: dataToSave,
@@ -82,7 +82,7 @@ const getMyProfile = async (userToken: string) => {
   return userProfile;
 };
 
-const updateUserProfile = async (userId: string, updateData: Partial<IUser>,  file?: Express.Multer.File) => {
+const updateUserProfile = async (userId: string, updateData: Partial<IUser>, file?: Express.Multer.File) => {
   // Check if user exists
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -91,9 +91,9 @@ const updateUserProfile = async (userId: string, updateData: Partial<IUser>,  fi
     throw new ApiError(404, "User not found");
   }
 
-  
 
-   // If file exists, upload and set profileImage url
+
+  // If file exists, upload and set profileImage url
   if (file) {
     const uploadedImageUrl = await fileUploader.uploadToDigitalOcean(file);
     updateData.profileImage = uploadedImageUrl.Location;
@@ -103,7 +103,7 @@ const updateUserProfile = async (userId: string, updateData: Partial<IUser>,  fi
   const updatedUser = await prisma.user.update({
     where: { id: userId },
     data: {
-      ...updateData,         
+      ...updateData,
       updatedAt: new Date(),
     },
     select: {
@@ -124,10 +124,47 @@ const updateUserProfile = async (userId: string, updateData: Partial<IUser>,  fi
   return updatedUser;
 };
 
+const postDemoVideo = async (file: any, userId: string) => {
+
+  if (!file) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Video File Requierd")
+
+  }
+
+  const videosData = await fileUploader.uploadToDigitalOcean(file)
+
+  if (!videosData.Location) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Filed to Upload video")
+  }
+
+  const data = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      demoClassUrl: videosData.Location
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phoneNumber: true,
+      profileImage: true,
+      role: true,
+      status: true,
+      city: true,
+      gender: true,
+      createdAt: true,
+      updatedAt: true,
+    }
+  })
+
+
+  return data
+}
 
 
 export const userService = {
- createUserIntoDb,
- getMyProfile,
- updateUserProfile
+  createUserIntoDb,
+  getMyProfile,
+  updateUserProfile,
+  postDemoVideo
 };

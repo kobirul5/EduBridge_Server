@@ -38,6 +38,7 @@ model User {
   fcmToken        String?    @default("")
   profileImage    String?    @default("")
   hourlyRate      Float?     @default(0.0)
+  demoClassUrl    String?    @default("")
   isTutorRequest  Boolean    @default(false)
   isTutorApproved Boolean    @default(false)
   otp             Int?
