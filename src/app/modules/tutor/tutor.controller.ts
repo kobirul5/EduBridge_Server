@@ -1,18 +1,18 @@
 
-import catchAsync from '../../../shared/catchAsync';
-import sendResponse from '../../../shared/sendResponse';
-import { tutorService } from './tutor.service';
-import httpStatus from 'http-status';
+// import catchAsync from '../../../shared/catchAsync';
+// import sendResponse from '../../../shared/sendResponse';
+// import { tutorService } from './tutor.service';
+// import httpStatus from 'http-status';
 
-const createTutor = catchAsync(async (req, res) => {
-  const result = await tutorService.create(req.body);
-  sendResponse(res, {
-    success: true,
-    statusCode: httpStatus.CREATED,
-    message: 'Tutor created successfully!',
-    data: result,
-  });
-});
+// const createTutor = catchAsync(async (req, res) => {
+//   const result = await tutorService.create(req.body);
+//   sendResponse(res, {
+//     success: true,
+//     statusCode: httpStatus.CREATED,
+//     message: 'Tutor created successfully!',
+//     data: result,
+//   });
+// });
 
 // const getAllTutors = catchAsync(async (req, res) => {
 //   const result = await tutorService.getAll();
@@ -54,10 +54,10 @@ const createTutor = catchAsync(async (req, res) => {
 //   });
 // });
 
-export const tutorController = {
-  createTutor,
+// export const tutorController = {
+  // createTutor,
   // getAllTutors,
   // getTutorById,
   // updateTutor,
   // deleteTutor,
-};
+// };

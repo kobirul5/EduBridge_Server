@@ -1,10 +1,10 @@
 import express from "express";
 import { AuthRoutes } from "../modules/Auth/auth.routes";
 import { chatRoutes } from "../modules/Chat/chat.routes";
-import { notificationsRoute } from "../modules/Notification/Notification.routes";
-import { paymentRoutes } from "../modules/Payment/Payment.routes";
+// import { notificationsRoute } from "../modules/Notification/Notification.routes";
+// import { paymentRoutes } from "../modules/Payment/Payment.routes";
 import { userRoutes } from "../modules/User/user.route";
-import { likeRouter } from "../modules/Like/Like.routes";
+// import { likeRouter } from "../modules/Like/Like.routes";
 import { ReviewRoutes } from "../modules/Review/review.route";
 import { findTutorAndBookingRoutes } from "../modules/findTutorAndBooking/findTutorAndBooking.routes";
 import { chatImageRoutes } from "../modules/chatImages/chatImages.routes";
@@ -27,23 +27,23 @@ const moduleRoutes = [
     path: "/auth",
     route: AuthRoutes,
   },
-  {
-    path: "/like",
-    route: likeRouter,
-  },
+  // {
+  //   path: "/like",
+  //   route: likeRouter,
+  // },
   
   {
     path: "/chats",
     route: chatRoutes,
   },
-  {
-    path: "/payment",
-    route: paymentRoutes,
-  },
-  {
-    path: "/notifications",
-    route: notificationsRoute,
-  },
+  // {
+  //   path: "/payment",
+  //   route: paymentRoutes,
+  // },
+  // {
+  //   path: "/notifications",
+  //   route: notificationsRoute,
+  // },
   {
     path: "/reviews",
     route: ReviewRoutes,

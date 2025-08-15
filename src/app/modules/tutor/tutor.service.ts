@@ -1,9 +1,9 @@
-import prisma from "../../../shared/prisma";
+// import prisma from "../../../shared/prisma";
 
 
-const create = async (data) => {
-  return await prisma.tutor.create({ data });
-};
+// const create = async (data) => {
+//   return await prisma.tutor.create({ data });
+// };
 
 // const getAll = async () => {
 //   return await prisma.tutor.findMany();
@@ -26,10 +26,10 @@ const create = async (data) => {
 //   return await prisma.tutor.delete({ where: { id } });
 // };
 
-export const tutorService = {
-  create,
+// export const tutorService = {
+  // create,
   // getAll,
   // getById,
   // update,
   // remove,
-};
+// };
