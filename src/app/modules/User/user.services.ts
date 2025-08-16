@@ -8,6 +8,7 @@ import { fileUploader } from "../../../helpars/fileUploader";
 import prisma from "../../../shared/prisma";
 import { jwtHelpers } from "../../../helpars/jwtHelpers";
 import { IUser } from "./user.interface";
+import { Secret } from "jsonwebtoken";
 
 
 const createUserIntoDb = async (userData: { email: string, password: string, role: any }) => {
@@ -43,11 +44,22 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
   });
 
 
+   const accessToken = jwtHelpers.generateToken(
+      {
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
+      },
+      config.jwt.jwt_secret as Secret,
+      config.jwt.expires_in as string
+    );
+
+
   if (!newUser) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User creation failed. Please check the input data.");
   }
 
-  return newUser;
+  return {newUser, token: accessToken};
 
 
 }
