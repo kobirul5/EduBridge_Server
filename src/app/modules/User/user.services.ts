@@ -41,7 +41,16 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
   // create user
   const newUser = await prisma.user.create({
     data: dataToSave,
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      createdAt: true,
+      updatedAt: true,
+
+    }
   });
+
 
 
    const accessToken = jwtHelpers.generateToken(
