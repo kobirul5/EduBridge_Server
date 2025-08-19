@@ -1,4 +1,4 @@
-import { Prisma, User } from "@prisma/client";
+import { Prisma, User, UserRole } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import { Request } from "express";
 import httpStatus from "http-status";
@@ -11,9 +11,16 @@ import { IUser } from "./user.interface";
 import { Secret } from "jsonwebtoken";
 
 
-const createUserIntoDb = async (userData: { email: string, password: string, role: any }) => {
+const createUserIntoDb = async (userData: { email: string, password: string, role: UserRole }) => {
 
-  console.log("Creating user with data:", userData);
+  if (!userData.email || !userData.password || !userData.role) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Missing required fields");
+  }
+
+  if(userData.role !== 'STUDENT' && userData.role !== 'TUTOR') {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Role must be either STUDENT or TUTOR");
+  }
+
 
   // check if user already exists
   const isUserExist = await prisma.user.findUnique({
@@ -25,6 +32,8 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
   if (isUserExist) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User already exists");
   }
+
+
 
   // hash password
   const hashedPassword = await bcrypt.hash(userData.password, Number(config.bcrypt_salt_rounds));
@@ -45,6 +54,8 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
       id: true,
       email: true,
       role: true,
+      isTutorRequest: true,
+      isTutorApproved: true,
       createdAt: true,
       updatedAt: true,
 

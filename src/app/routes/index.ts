@@ -9,6 +9,7 @@ import { ReviewRoutes } from "../modules/Review/review.route";
 import { findTutorAndBookingRoutes } from "../modules/findTutorAndBooking/findTutorAndBooking.routes";
 import { chatImageRoutes } from "../modules/chatImages/chatImages.routes";
 import { favoriteTutorRoutes } from "../modules/favoriteTutor/favoriteTutor.routes";
+import { tutorRoutes } from "../modules/tutor/tutor.routes";
 
 
 
@@ -35,6 +36,10 @@ const moduleRoutes = [
   {
     path: "/chats",
     route: chatRoutes,
+  },
+  {
+    path: "/tutors",
+    route: tutorRoutes
   },
   // {
   //   path: "/payment",

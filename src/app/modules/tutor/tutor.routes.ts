@@ -1,13 +1,12 @@
-// import { Router } from 'express';
-// import { tutorController } from './tutor.controller';
-// import validateRequest from '../../middlewares/validateRequest';
+import { Router } from 'express';
+import { tutorController } from './tutor.controller';
+import validateRequest from '../../middlewares/validateRequest';
+import auth from '../../middlewares/auth';
 
-// const router = Router();
 
-// router.post('/', validateRequest, tutorController.createTutor);
-// router.get('/', tutorController.getAllTutors);
-// router.get('/:id', tutorController.getTutorById);
-// router.put('/:id', validateRequest, tutorController.updateTutor);
-// router.delete('/:id', tutorController.deleteTutor);
+const router = Router();
 
-// export const tutorRoutes = router;
+router.get('/stats', auth(), tutorController.getAllStats);
+
+
+export const tutorRoutes = router;

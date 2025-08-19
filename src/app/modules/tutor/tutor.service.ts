@@ -1,35 +1,36 @@
-// import prisma from "../../../shared/prisma";
+import httpStatus from "http-status";
+import prisma from "../../../shared/prisma";
+import ApiError from "../../../errors/ApiErrors";
 
+const getAllTutorStats = async ({ tutorId }: { tutorId: string }) => {
+  // 1. Total Earnings (completed payments for this tutor)
 
-// const create = async (data) => {
-//   return await prisma.tutor.create({ data });
-// };
+  // const totalEarnings = await prisma.({
 
-// const getAll = async () => {
-//   return await prisma.tutor.findMany();
-// };
+  // })
 
-// const getById = async (id) => {
-//   const item = await prisma.tutor.findUnique({ where: { id } });
-//   if (!item) throw new Error('Tutor not found!');
-//   return item;
-// };
+  // 2. Total Bookings (for this tutor)
+  const totalBookings = await prisma.booking.count({
+    where: { tutorId: tutorId, isPaymentDone: true }
+  });
 
-// const update = async (id, data) => {
-//   return await prisma.tutor.update({
-//     where: { id },
-//     data,
-//   });
-// };
+  // 3. New Bookings (today only, for this tutor)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-// const remove = async (id) => {
-//   return await prisma.tutor.delete({ where: { id } });
-// };
+  const newBookings = await prisma.booking.count({
+    where: {
+      tutorId: tutorId,
+      createdAt: { gte: today }
+    }
+  });
 
-// export const tutorService = {
-  // create,
-  // getAll,
-  // getById,
-  // update,
-  // remove,
-// };
+  return {
+    totalBookings,
+    newBookings
+  };
+};
+
+export const tutorService = {
+  getAllTutorStats
+};

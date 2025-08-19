@@ -50,6 +50,8 @@ const getTutorByIdService = async (id: string) => {
       role: true,
       profileImage: true,
       education: true,
+      availableDays: true,
+      availableTime: true,
       experience: true,
       about: true,
       createdAt: true,
@@ -74,7 +76,7 @@ endTime:Date) => {
   if (!studentId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
   }
-console.log("tutorId", tutorId, date, subject, startTime, endTime, studentId , "---------------------------");
+
 
   const booking = await prisma.booking.create({
     data: {
@@ -187,8 +189,16 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
     },
   });
 
+const uniqueDates = await prisma.booking.groupBy({
+  by: ['date'],
+  // _count: { _all: true }, 
+  orderBy: { date: 'asc' }
+});
 
-return acceptedBookings;
+
+
+
+return {uniqueDates,acceptedBookings};
 
 
 }
