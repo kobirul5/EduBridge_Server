@@ -77,8 +77,8 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
   };
 };
 
-const getTutorRequest = async ({ adminId}:{adminId: string}) => {
-  
+const getTutorRequest = async ({ adminId }: { adminId: string }) => {
+
   const admin = await prisma.user.findUnique({
     where: { id: adminId, role: UserRole.ADMIN },
   });
@@ -86,13 +86,13 @@ const getTutorRequest = async ({ adminId}:{adminId: string}) => {
     throw new Error("Admin not found!");
   }
 
-  if(!admin){
+  if (!admin) {
     throw new ApiError(httpStatus.NOT_FOUND, "Unauthorized  request!");
   }
 
 
   const result = await prisma.user.findMany({
-    where: { isTutorApproved: false , isTutorRequest: true , role: UserRole.TUTOR }, 
+    where: { isTutorApproved: false, isTutorRequest: true, role: UserRole.TUTOR },
     select: {
       id: true,
       fullName: true,
@@ -107,7 +107,35 @@ const getTutorRequest = async ({ adminId}:{adminId: string}) => {
 };
 
 
+// get tutor request by id
+const getTutorRequestById = async ({ tutorId, adminId }: { tutorId: string, adminId: string }) => {
+
+  if (!tutorId ) {
+    throw new Error("User tutor id  is required");
+  }
+
+  const admin = await prisma.user.findUnique({
+    where: { id: adminId, role: UserRole.ADMIN },
+  });
+  if (!admin) {
+    throw new Error("Admin not found!");
+  }
+
+  if (!admin) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Unauthorized  request!");
+  }
+
+
+  const result = await prisma.user.findUnique({
+    where: { id: tutorId }
+  });
+  return result;
+
+
+};
+
 export const adminService = {
   getAllUsers,
-  getTutorRequest
+  getTutorRequest,
+  getTutorRequestById
 };

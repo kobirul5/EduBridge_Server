@@ -10,5 +10,7 @@ router.get('/all-users', auth(UserRole.ADMIN), adminController.getAllUsersContro
 
 router.get('/tutor-request', auth(UserRole.ADMIN), adminController.getTutorRequestController);
 
+router.get('/tutor-request/:tutorId', auth(UserRole.ADMIN), adminController.getTutorRequestByIdController);
+
 
 export const adminRoutes = router;
