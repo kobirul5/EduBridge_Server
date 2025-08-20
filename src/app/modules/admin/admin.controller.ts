@@ -16,7 +16,23 @@ const getAllUsersController = catchAsync(async (req, res) => {
   });
 });
 
+
+// get tutor request
+const getTutorRequestController = catchAsync(async (req, res) => {
+  const adminId = req.user?.id;
+  const result = await adminService.getTutorRequest({ adminId });
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Tutor request fetched successfully!',
+    data: result,
+  });
+});
+
+
+
 export const adminController = {
   getAllUsersController,
+  getTutorRequestController
 
 };
