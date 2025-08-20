@@ -42,7 +42,7 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
   const dataToSave = {
     email: userData.email,
     password: hashedPassword,
-    role: userData.role === 'TUTOR' ? 'STUDENT' : userData.role,
+    role: userData.role,
     isTutorRequest: userData.role === 'TUTOR',
     isTutorApproved: false,
   };

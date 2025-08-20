@@ -3,15 +3,16 @@ import prisma from "../../../shared/prisma";
 import { QueryBuilder } from "../../../shared/QueryBuilder";
 
 interface GetAllUsersQuery {
-  role?: string;       // STUDENT / TUTOR
+  role?: UserRole;       // STUDENT / TUTOR
   searchTerm?: string; // search by fullName or email
   page?: string;       // page number
   limit?: string;      // page size
-  sort?: string;       // e.g., "-createdAt"
+  sort?: string;
+  subject?: string      // e.g., "-createdAt"
 }
 
 const getAllUsers = async (query: GetAllUsersQuery) => {
-  const { role, searchTerm, page = "1", limit = "10", sort = "-createdAt" } = query;
+  const { role, subject, searchTerm, page = "1", limit = "10", sort = "-createdAt" } = query;
 
   // Pagination
   const skip = (Number(page) - 1) * Number(limit);
@@ -29,6 +30,12 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
 
   if (role) {
     where.role = role;
+  }
+
+  if (subject && role === UserRole.TUTOR) {
+    where.subject = {
+      has: subject, // subject array er moddhe check korbe
+    };
   }
 
   if (searchTerm) {
@@ -50,6 +57,7 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
         fullName: true,
         email: true,
         role: true,
+        subject: true,
         createdAt: true,
       },
     }),
@@ -66,6 +74,7 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
     },
   };
 };
+
 
 export const adminService = {
   getAllUsers
