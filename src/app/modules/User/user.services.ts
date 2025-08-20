@@ -1,6 +1,5 @@
-import { Prisma, User, UserRole } from "@prisma/client";
+import {  UserRole } from "@prisma/client";
 import * as bcrypt from "bcrypt";
-import { Request } from "express";
 import httpStatus from "http-status";
 import config from "../../../config";
 import ApiError from "../../../errors/ApiErrors";
@@ -94,21 +93,7 @@ const getMyProfile = async (userToken: string) => {
   const userProfile = await prisma.user.findUnique({
     where: {
       id: decodedToken.id,
-    },
-    select: {
-      id: true,
-      email: true,
-      fullName: true,
-      phoneNumber: true,
-      gender: true,
-      role: true,
-      city: true,
-      status: true,
-      fcmToken: true,
-      profileImage: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    }
   });
 
   return userProfile;

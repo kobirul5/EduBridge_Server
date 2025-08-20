@@ -23,6 +23,7 @@ export function setupWebSocket(server: Server) {
         const parsedData = JSON.parse(data);
 
         switch (parsedData.event) {
+          // 🔹 Authenticate event
           case "authenticate": {
             const token = parsedData.token;
 
@@ -44,7 +45,6 @@ export function setupWebSocket(server: Server) {
             }
 
             const { id } = user;
-
             ws.userId = id;
             onlineUsers.add(id);
             userSockets.set(id, ws);
@@ -56,6 +56,7 @@ export function setupWebSocket(server: Server) {
             break;
           }
 
+          // 🔹 Send single message
           case "message": {
             const { receiverId, message, images } = parsedData;
 
@@ -98,11 +99,14 @@ export function setupWebSocket(server: Server) {
             ws.send(JSON.stringify({ event: "message", data: chat }));
             break;
           }
+
+          // 🔹 Project event
           case "project": {
             ws.send(JSON.stringify({ parsedData }));
             return;
           }
 
+          // 🔹 Fetch single chat history
           case "fetchChats": {
             const { receiverId } = parsedData;
             if (!ws.userId) {
@@ -143,6 +147,7 @@ export function setupWebSocket(server: Server) {
             break;
           }
 
+          // 🔹 Unread messages count
           case "unReadMessages": {
             const { receiverId } = parsedData;
             if (!ws.userId || !receiverId) {
@@ -168,80 +173,89 @@ export function setupWebSocket(server: Server) {
               where: { roomId: room.id, isRead: false, receiverId: ws.userId },
             });
 
-            const unReadCount = unReadMessages.length;
-
             ws.send(
               JSON.stringify({
                 event: "unReadMessages",
-                data: { messages: unReadMessages, count: unReadCount },
+                data: {
+                  messages: unReadMessages,
+                  count: unReadMessages.length,
+                },
               })
             );
             break;
           }
 
+          // 🔹 Message list (all conversations with last message + unread count)
           case "messageList": {
             try {
-              // Fetch all rooms where the user is involved
+              if (!ws.userId) {
+                ws.send(
+                  JSON.stringify({
+                    event: "error",
+                    message: "User not authenticated",
+                  })
+                );
+                return;
+              }
+
               const rooms = await prisma.room.findMany({
                 where: {
                   OR: [{ senderId: ws.userId }, { receiverId: ws.userId }],
                 },
                 include: {
                   chat: {
-                    orderBy: {
-                      createdAt: "desc",
-                    },
-                    take: 1, // Fetch only the latest message for each room
+                    orderBy: { createdAt: "desc" },
+                    take: 1,
                   },
                 },
               });
 
-              // Extract the relevant user IDs from the rooms
-              const userIds = rooms.map((room) => {
-                return room.senderId === ws.userId
-                  ? room.receiverId
-                  : room.senderId;
-              });
+              if (!rooms.length) {
+                ws.send(JSON.stringify({ event: "messageList", data: [] }));
+                return;
+              }
 
-              // Fetch user profiles for the corresponding user IDs
+              const userIds = rooms.map((room) =>
+                room.senderId === ws.userId ? room.receiverId : room.senderId
+              );
+
               const userInfos = await prisma.user.findMany({
-                where: {
-                  id: {
-                    in: userIds,
-                  },
-                },
+                where: { id: { in: userIds } },
                 select: {
-                  profileImage: true,
-                  fullName: true,
                   id: true,
-                  // interest: true,
-                  // favoritesFood:true,
-                  // lat: true,
-                  // long:true,
-                  
+                  fullName: true,
+                  profileImage: true,
                 },
               });
 
-              
+              const userWithLastMessages = await Promise.all(
+                rooms.map(async (room) => {
+                  const otherUserId =
+                    room.senderId === ws.userId
+                      ? room.receiverId
+                      : room.senderId;
 
-              // Combine user info with their last message
-              const userWithLastMessages = rooms.map((room) => {
-                const otherUserId =
-                  room.senderId === ws.userId ? room.receiverId : room.senderId;
-                const userInfo:any = userInfos.find(
-                  (userInfo) => userInfo.id === otherUserId
-                );
+                  const userInfo = userInfos.find(
+                    (u) => u.id === otherUserId
+                  );
 
-                userInfo.photos = userInfo.photos[0]
+                  // Unread count for this room
+                  const unreadCount = await prisma.chat.count({
+                    where: {
+                      roomId: room.id,
+                      receiverId: ws.userId,
+                      isRead: false,
+                    },
+                  });
 
-                return {
-                  user: userInfo || null,
-                  // image:userInfo?.photos[0]|| null,
-                  lastMessage: room.chat[0] || null,
-                };
-              });
+                  return {
+                    user: userInfo || null,
+                    lastMessage: room.chat[0] || null,
+                    unreadCount,
+                  };
+                })
+              );
 
-              // Send the result back to the requesting client
               ws.send(
                 JSON.stringify({
                   event: "messageList",
@@ -249,126 +263,16 @@ export function setupWebSocket(server: Server) {
                 })
               );
             } catch (error) {
-              console.error(
-                "Error fetching user list with last messages:",
-                error
-              );
+              console.error("Error fetching message list:", error);
               ws.send(
                 JSON.stringify({
                   event: "error",
-                  message: "Failed to fetch users with last messages",
+                  message: "Failed to fetch message list",
                 })
               );
             }
             break;
           }
-
-          // case "groupMessage": {
-          //   const {groupId, message, images} = parsedData;
-
-          //   if (!ws.userId || !groupId || !message) {
-          //     console.log("Invalid group message payload");
-          //     return;
-          //   }
-
-          //   // Check if the group exists
-          //   const isMember = await prisma.groupMember.findFirst({
-          //     where: {
-          //       groupId,
-          //       userId: ws.userId,
-          //     },
-          //   });
-
-          //   if(!isMember){
-          //     ws.send(JSON.stringify({
-          //       event: "error",
-          //       message: "You are not a member of this group",
-          //     })
-          //   );
-          //     return;
-          //   }
-
-          //   //create group message
-          //   const newMessage = await prisma.groupMessage.create({
-          //     data: {
-          //       groupId,
-          //       senderId: isMember.id,
-          //       message,
-          //       images: images || [],
-          //     },
-          //     include: {
-          //       sender: true,
-          //     }
-          //   });
-
-          //   // Broadcast the message to all group members
-          //   const groupMembers = await prisma.groupMember.findMany({
-          //     where: {
-          //       groupId,
-          //     },
-          //     select: {
-          //       userId: true,
-          //     },
-          //   });
-
-          //   groupMembers.forEach(({userId})=> {
-          //     const socket = userSockets.get(userId);
-          //     if(socket) {
-          //       socket.send(
-          //         JSON.stringify({
-          //           event: "groupMessage",
-          //           data: newMessage,
-          //         })
-          //       );
-          //     }
-          //   });
-          //   break;
-          // }
-
-          // case "fetchGroupMessages": {
-          //   const {groupId} = parsedData;
-
-          //   if(!ws.userId || !groupId){
-          //     return ;
-          //   }
-
-          //   const isMember = await prisma.groupMember.findFirst({
-          //     where: {
-          //       groupId,
-          //       userId: ws.userId,
-          //     },
-          //   });
-
-          //   if(!isMember){
-          //     ws.send(
-          //       JSON.stringify({
-          //         event: "error",
-          //         message: "You are not a member of this group",
-          //       })
-          //     );
-          //     return;
-          //   }
-
-          //   const messages = await prisma.groupMessage.findMany({
-          //     where: {
-          //       groupId,
-          //     },
-          //     orderBy: {
-          //       createdAt: "asc",
-          //     },
-          //     include: {
-          //       sender: true,
-          //     },
-          //   });
-
-          //   ws.send(
-          //     JSON.stringify({
-          //       event: "fetchGroupMessages",
-          //       data: messages,
-          //     })
-          //   );
-          //   break;
-          // }
 
           default:
             console.log("Unknown event type:", parsedData.event);
@@ -402,11 +306,6 @@ function broadcastToAll(wss: WebSocketServer, message: object) {
     }
   });
 }
-
-
-
-
-
 
 
 

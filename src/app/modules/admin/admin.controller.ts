@@ -54,10 +54,36 @@ const updateTutorRequestStatusController = catchAsync(async (req, res) => {
   });
 })
 
+// get stats
+const getStatsController = catchAsync(async (req, res) => {
+  const result = await adminService.getStatsService();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Stats fetched successfully!',
+    data: result,
+  });
+});
+
+
+// get warning tutors
+const getWarningTutorsController = catchAsync(async (req, res) => {
+  const result = await adminService.getWarningTutorsService();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Warning Tutors fetched successfully!',
+    data: result,
+  });
+})
+
+
 export const adminController = {
   getAllUsersController,
   getTutorRequestController,
   getTutorRequestByIdController,
-  updateTutorRequestStatusController
+  updateTutorRequestStatusController,
+  getStatsController,
+  getWarningTutorsController
 
 };

@@ -17,7 +17,7 @@ router.post(
 
 router.get(
   "/get-me",
-  auth(UserRole.ADMIN, UserRole.STUDENT),
+  auth(),
   userController.getMyProfile
 );
 
