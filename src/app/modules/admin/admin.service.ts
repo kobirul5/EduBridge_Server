@@ -1,4 +1,4 @@
-import { UserRole } from "@prisma/client";
+import { TutorRequest, UserRole } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import { QueryBuilder } from "../../../shared/QueryBuilder";
 import ApiError from "../../../errors/ApiErrors";
@@ -58,6 +58,9 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
         id: true,
         fullName: true,
         email: true,
+        isTutorApproved: true,
+        isTutorRequest: true,
+        tutorRequestStatus: true,
         role: true,
         subject: true,
         createdAt: true,
@@ -97,6 +100,9 @@ const getTutorRequest = async ({ adminId }: { adminId: string }) => {
       id: true,
       fullName: true,
       experience: true,
+      isTutorApproved: true,
+      isTutorRequest: true,
+      tutorRequestStatus: true,
       email: true,
       role: true,
       subject: true,
@@ -134,8 +140,51 @@ const getTutorRequestById = async ({ tutorId, adminId }: { tutorId: string, admi
 
 };
 
+
+const updateTutorRequestStatus = async ({tutorId, adminId, status}: {tutorId: string, adminId: string, status: TutorRequest}) => {
+
+  const admin = await prisma.user.findUnique({
+    where: { id: adminId, role: UserRole.ADMIN },
+  });
+  if (!admin) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Admin not found!");
+  }
+
+  if (!admin) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Unauthorized  request!");
+  }
+
+ if (status !== TutorRequest.ACCEPTED && status !== TutorRequest.CANCELLED) {
+  throw new ApiError(httpStatus.BAD_REQUEST, " Status must be either 'ACCEPTED' or 'CANCELLED'!");
+}
+
+
+  const result = await prisma.user.update({
+    where: { id: tutorId },
+    data: {
+      isTutorRequest: false,
+      isTutorApproved: status === TutorRequest.ACCEPTED ? true :false,
+      tutorRequestStatus: status
+    },
+    select: {
+      id: true,
+      fullName: true,
+      experience: true,
+      isTutorApproved: true,
+      isTutorRequest: true,
+      tutorRequestStatus: true,
+      email: true,
+      role: true,
+      subject: true,
+      createdAt: true,
+    }
+  });
+  return result;
+};
+
 export const adminService = {
   getAllUsers,
   getTutorRequest,
-  getTutorRequestById
+  getTutorRequestById,
+  updateTutorRequestStatus
 };

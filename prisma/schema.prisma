@@ -26,26 +26,33 @@ enum BookingStatus {
   CANCELLED
 }
 
+enum TutorRequest {
+  PENDING
+  ACCEPTED
+  CANCELLED
+}
+
 model User {
-  id              String     @id @default(auto()) @map("_id") @db.ObjectId
-  fullName        String?    @default("")
-  email           String     @unique
-  phoneNumber     String?    @default("")
-  password        String
-  gender          String?    @default("")
-  city            String?    @default("")
-  status          UserStatus @default(ACTIVE)
-  fcmToken        String?    @default("")
-  profileImage    String?    @default("")
-  hourlyRate      Float?     @default(0.0)
-  demoClassUrl    String?    @default("")
-  isTutorRequest  Boolean    @default(false)
-  isTutorApproved Boolean    @default(false)
-  otp             Int?
-  otpExpiresAt    DateTime?  @default(now())
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  role            UserRole   @default(STUDENT)
+  id                 String       @id @default(auto()) @map("_id") @db.ObjectId
+  fullName           String?      @default("")
+  email              String       @unique
+  phoneNumber        String?      @default("")
+  password           String
+  gender             String?      @default("")
+  city               String?      @default("")
+  status             UserStatus   @default(ACTIVE)
+  fcmToken           String?      @default("")
+  profileImage       String?      @default("")
+  hourlyRate         Float?       @default(0.0)
+  demoClassUrl       String?      @default("")
+  isTutorRequest     Boolean      @default(false)
+  isTutorApproved    Boolean      @default(false)
+  tutorRequestStatus TutorRequest @default(PENDING)
+  otp                Int?
+  otpExpiresAt       DateTime?    @default(now())
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  role               UserRole     @default(STUDENT)
 
   // Tutor-specific fields merged into User model:
   subject       String[] @default([]) // Subjects tutor can teach, empty array if not a tutor
@@ -127,9 +134,9 @@ model Booking {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   // Relations to users acting as tutor and student:
-  tutor   User     @relation("TutorBookings", fields: [tutorId], references: [id])
-  student User     @relation("StudentBookings", fields: [studentId], references: [id])
-  Payment Payment?
+  tutor          User          @relation("TutorBookings", fields: [tutorId], references: [id])
+  student        User          @relation("StudentBookings", fields: [studentId], references: [id])
+  Payment        Payment?
 }
 
 model Room {

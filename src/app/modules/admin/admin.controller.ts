@@ -42,11 +42,22 @@ const getTutorRequestByIdController = catchAsync(async (req, res) => {
   });
 });
 
-
+const updateTutorRequestStatusController = catchAsync(async (req, res) => {
+  const {tutorId, status}= req.body;
+  const adminId = req.user?.id;
+  const result = await adminService.updateTutorRequestStatus({tutorId, adminId, status });
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Tutor request updated successfully!',
+    data: result,
+  });
+})
 
 export const adminController = {
   getAllUsersController,
   getTutorRequestController,
-  getTutorRequestByIdController
+  getTutorRequestByIdController,
+  updateTutorRequestStatusController
 
 };
