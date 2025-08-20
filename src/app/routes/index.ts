@@ -10,6 +10,7 @@ import { findTutorAndBookingRoutes } from "../modules/findTutorAndBooking/findTu
 import { chatImageRoutes } from "../modules/chatImages/chatImages.routes";
 import { favoriteTutorRoutes } from "../modules/favoriteTutor/favoriteTutor.routes";
 import { tutorRoutes } from "../modules/tutor/tutor.routes";
+import { adminRoutes } from "../modules/admin/admin.routes";
 
 
 
@@ -61,6 +62,10 @@ const moduleRoutes = [
     path: "/favorite-tutor",
     route: favoriteTutorRoutes,
   },
+  {
+    path: "/admins",
+    route: adminRoutes
+  }
 
 ];
 
