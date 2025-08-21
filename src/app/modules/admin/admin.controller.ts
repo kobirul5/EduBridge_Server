@@ -89,6 +89,39 @@ const getWarningTutorsController = catchAsync(async (req, res) => {
 //   });
 // })
 
+// warnTutorController 
+const warnTutorController = catchAsync(async (req, res) => {
+
+const adminId = req.user?.id;
+const {userId, message} = req.body
+
+  const result = await adminService.warnTutorService({userId, adminId, message});
+
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Tutor warned successfully!',
+    data: result,
+  });
+})
+
+// suspense user
+const suspendTutorController = catchAsync(async (req, res) => {
+
+  const adminId = req.user?.id;
+  const userId = req.params.tutorId;
+    const result = await adminService.suspendTutorService({userId, adminId});
+
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: 'Tutor suspended successfully!',
+      data: result,
+    });
+})
+
 export const adminController = {
   getAllUsersController,
   getTutorRequestController,
@@ -96,6 +129,8 @@ export const adminController = {
   updateTutorRequestStatusController,
   getStatsController,
   getWarningTutorsController,
-  // getWalletController
+  // getWalletController,
+  warnTutorController,
+  suspendTutorController
 
 };

@@ -58,6 +58,11 @@ const loginUser = async (payload: {
   if (!isCorrectPassword) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Password incorrect!");
   }
+
+  if(userData.status === UserStatus.SUSPENDED) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User suspended!");
+  }
+
   // If fcmToken is provided, update the user's fcmToken
   if (payload && payload.fcmToken) {
     await prisma.user.update({

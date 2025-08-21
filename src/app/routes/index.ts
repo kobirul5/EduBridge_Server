@@ -29,11 +29,7 @@ const moduleRoutes = [
     path: "/auth",
     route: AuthRoutes,
   },
-  // {
-  //   path: "/like",
-  //   route: likeRouter,
-  // },
-  
+
   {
     path: "/chats",
     route: chatRoutes,

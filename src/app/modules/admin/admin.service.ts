@@ -232,7 +232,7 @@ const getStatsService = async () => {
     ],
   });
 
-  if(!LastSevenDaysRaw){
+  if (!LastSevenDaysRaw) {
     return {
       totalUser: userCount,
       totalTutors: tutorCount,
@@ -243,7 +243,7 @@ const getStatsService = async () => {
   }
 
   const LastSevenDays = dateArray.map(date => {
-    const found = (LastSevenDaysRaw as any).find( (d: any) => d._id === date);
+    const found = (LastSevenDaysRaw as any).find((d: any) => d._id === date);
     return { date, totalAmount: found?.totalAmount ?? 0 };
   });
 
@@ -259,18 +259,18 @@ const getStatsService = async () => {
 // get warning tutors
 const getWarningTutorsService = async () => {
 
-const lowRatingUsers = await prisma.user.findMany({
-  where: {
-    tutorReview: {
-      some: { rating: 1 } 
+  const lowRatingUsers = await prisma.user.findMany({
+    where: {
+      tutorReview: {
+        some: { rating: 1 }
+      }
+    },
+    include: {
+      tutorReview: {
+        where: { rating: 1 }
+      }
     }
-  },
-  include: {
-    tutorReview: {
-      where: { rating: 1 } 
-    }
-  }
-});
+  });
 
 
 
@@ -319,6 +319,45 @@ const lowRatingUsers = await prisma.user.findMany({
 //   return {result, total};
 // }
 
+// get warning tutors
+const warnTutorService = async ({ userId, adminId, message }: { userId: string, message: string, adminId: string }) => {
+
+  if (!adminId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "unauthorized request!");
+  }
+
+  if (!userId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User id is required!");
+  }
+  if (!message) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Message is required!");
+  }
+
+
+
+  const result = await prisma.warning.create({
+    data: {
+      userId: userId,
+      message,
+      adminId
+    }
+  })
+
+  return result
+}
+
+// get warning tutors
+const suspendTutorService = async ({ userId, adminId }: { userId: string, adminId: string }) => {
+
+  if (!adminId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "unauthorized request!");
+  }
+
+  if (!userId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User id is required!");
+  }
+}
+
 
 export const adminService = {
   getAllUsers,
@@ -327,5 +366,7 @@ export const adminService = {
   updateTutorRequestStatus,
   getStatsService,
   getWarningTutorsService,
-  // getWalletService
+  // getWalletService,
+  warnTutorService,
+  suspendTutorService
 };

@@ -40,6 +40,10 @@ const auth = (...roles: string[]) => {
         throw new ApiError(httpStatus.FORBIDDEN, "Your account is blocked!");
       }
 
+      if (user.status === "SUSPENDED") {
+        throw new ApiError(httpStatus.FORBIDDEN, "Your account is suspended!");
+      }
+
       req.user = verifiedUser as JwtPayload;
 
       if (roles.length && !roles.includes(verifiedUser.role)) {
