@@ -20,7 +20,6 @@ const auth = (...roles: string[]) => {
       if (!token) {
         throw new ApiError(httpStatus.UNAUTHORIZED, "You are not authorized!");
       }
-      console.log(token);
 
       const verifiedUser = jwtHelpers.verifyToken(
         token,

@@ -242,24 +242,24 @@ const getStatsService = async () => {
     };
   }
 
-  // const LastSevenDays = dateArray.map(date => {
-  //   const found = LastSevenDaysRaw.find(d => d._id === date);
-  //   return { date, totalAmount: found?.totalAmount ?? 0 };
-  // });
+  const LastSevenDays = dateArray.map(date => {
+    const found = (LastSevenDaysRaw as any).find( (d: any) => d._id === date);
+    return { date, totalAmount: found?.totalAmount ?? 0 };
+  });
 
   return {
     totalUser: userCount,
     totalTutors: tutorCount,
     totalStudents: studentCount,
     newUser: newUserCount,
-    lastSavedDay: LastSevenDaysRaw || [],
+    lastSavedDay: LastSevenDays || [],
   };
 };
 
 // get warning tutors
 const getWarningTutorsService = async () => {
   const result = await prisma.user.findMany({
-    where: { rating: { lte: 1 } },
+    where: { rating:  {gt: 0, lte: 1 } },
     select: {
       id: true,
       fullName: true,
@@ -267,6 +267,7 @@ const getWarningTutorsService = async () => {
       isTutorApproved: true,
       isTutorRequest: true,
       tutorRequestStatus: true,
+      rating: true,
       email: true,
       role: true,
       subject: true,

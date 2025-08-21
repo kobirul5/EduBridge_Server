@@ -123,19 +123,7 @@ const updateUserProfile = async (userId: string, updateData: Partial<IUser>, fil
       ...updateData,
       updatedAt: new Date(),
     },
-    select: {
-      id: true,
-      fullName: true,
-      email: true,
-      phoneNumber: true,
-      profileImage: true,
-      role: true,
-      status: true,
-      city: true,
-      gender: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+    
   });
 
   return updatedUser;
