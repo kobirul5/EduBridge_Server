@@ -258,23 +258,39 @@ const getStatsService = async () => {
 
 // get warning tutors
 const getWarningTutorsService = async () => {
-  const result = await prisma.user.findMany({
-    where: { rating:  {gt: 0, lte: 1 } },
-    select: {
-      id: true,
-      fullName: true,
-      experience: true,
-      isTutorApproved: true,
-      isTutorRequest: true,
-      tutorRequestStatus: true,
-      rating: true,
-      email: true,
-      role: true,
-      subject: true,
-      createdAt: true,
+
+const lowRatingUsers = await prisma.user.findMany({
+  where: {
+    tutorReview: {
+      some: { rating: 1 } 
     }
-  });
-  return result;
+  },
+  include: {
+    tutorReview: {
+      where: { rating: 1 } 
+    }
+  }
+});
+
+
+
+  // const result = await prisma.user.findMany({
+  //   where: { rating:  {gt: 0, lte: 1 } },
+  //   select: {
+  //     id: true,
+  //     fullName: true,
+  //     experience: true,
+  //     isTutorApproved: true,
+  //     isTutorRequest: true,
+  //     tutorRequestStatus: true,
+  //     rating: true,
+  //     email: true,
+  //     role: true,
+  //     subject: true,
+  //     createdAt: true,
+  //   }
+  // });
+  return lowRatingUsers;
 };
 
 
