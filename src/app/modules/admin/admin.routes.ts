@@ -12,6 +12,7 @@ router.get('/all-users', auth(UserRole.ADMIN), adminController.getAllUsersContro
 router.get('/tutor-request', auth(UserRole.ADMIN), adminController.getTutorRequestController);
 router.get('/stats', auth(UserRole.ADMIN), adminController.getStatsController);
 router.get('/warning-tutors', auth(UserRole.ADMIN), adminController.getWarningTutorsController);
+// router.get('/my-wallet', auth(UserRole.ADMIN), adminController.getWalletController);
 
 router.patch('/tutor-request-update', auth(UserRole.ADMIN), adminController.updateTutorRequestStatusController);
 router.get('/tutor-request/:tutorId', auth(UserRole.ADMIN), adminController.getTutorRequestByIdController);

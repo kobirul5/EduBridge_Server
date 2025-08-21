@@ -293,6 +293,32 @@ const lowRatingUsers = await prisma.user.findMany({
   return lowRatingUsers;
 };
 
+// get warning tutors
+// const getWalletService = async () => {
+
+
+
+//   const result = await prisma.payment.findMany({
+//     select: {
+//       id: true,
+//       amountPaid: true,
+//       // createdAt: true,
+//       tutorID: true,
+//       studentID: true,
+//     }
+//   });
+
+//   const total = await prisma.payment.aggregate({
+//     _sum: {
+//       amountPaid: true,
+//     }
+//   });
+
+
+
+//   return {result, total};
+// }
+
 
 export const adminService = {
   getAllUsers,
@@ -300,5 +326,6 @@ export const adminService = {
   getTutorRequestById,
   updateTutorRequestStatus,
   getStatsService,
-  getWarningTutorsService
+  getWarningTutorsService,
+  // getWalletService
 };

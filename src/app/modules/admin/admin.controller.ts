@@ -77,6 +77,17 @@ const getWarningTutorsController = catchAsync(async (req, res) => {
   });
 })
 
+// // get wallet
+// const getWalletController = catchAsync(async (req, res) => {
+
+//   const result = await adminService.getWalletService();
+//   sendResponse(res, {
+//     statusCode: httpStatus.OK,
+//     success: true,
+//     message: 'Wallet fetched successfully!',
+//     data: result,
+//   });
+// })
 
 export const adminController = {
   getAllUsersController,
@@ -84,6 +95,7 @@ export const adminController = {
   getTutorRequestByIdController,
   updateTutorRequestStatusController,
   getStatsController,
-  getWarningTutorsController
+  getWarningTutorsController,
+  // getWalletController
 
 };

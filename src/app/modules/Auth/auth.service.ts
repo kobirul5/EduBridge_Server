@@ -1,4 +1,4 @@
-import { UserStatus } from "@prisma/client";
+import { User, UserRole, UserStatus } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import crypto from "crypto";
 import httpStatus from "http-status";
@@ -15,19 +15,37 @@ const loginUser = async (payload: {
   email: string;
   password: string;
   fcmToken?: string;
+  role: UserRole;
 }) => {
+
+
+  if (!payload.email || !payload.password || !payload.role) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email, password and role are required");
+  }
+
+  const validRoles = [UserRole.STUDENT, UserRole.TUTOR, UserRole.ADMIN];
+
+  if (!validRoles.includes(payload.role)) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Role must be either STUDENT or TUTOR or ADMIN"
+    );
+  }
+
 
   // Check if the user exists
   const userData = await prisma.user.findUnique({
     where: {
       email: payload.email,
+      role: payload.role
     },
   });
+
 
   if (!userData?.email) {
     throw new ApiError(
       httpStatus.NOT_FOUND,
-      "User not found! with this email " + payload.email
+      "User not found! with this email " + payload.email + " and role " + payload.role
     );
   }
 
@@ -300,7 +318,7 @@ const deleteUser = async (userId: string) => {
   if (!userId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User ID is required");
   }
-  
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
   });
