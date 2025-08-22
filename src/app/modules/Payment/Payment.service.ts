@@ -8,12 +8,9 @@
 // import prisma from '../../../shared/prisma';
 // import ApiError from '../../../errors/ApiErrors';
 // import { IUser } from '../User/user.interface';
+// import stripe from '../../../shared/stripe';
 
 
-
-// const stripe = require('stripe')(
-//   'REDACTED_STRIPE_SECRET',
-// );
 
 // export interface IBuySubscription {
 //   email: string;
