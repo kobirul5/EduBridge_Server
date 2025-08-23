@@ -43,11 +43,11 @@ const getTurorById = catchAsync(async (req, res) => {
 
 
 const createBooking = catchAsync(async (req, res) => {
-  const { tutorId, date, subject, startTime, endTime } = req.body;
+  const { tutorId, date, subject, startTime, endTime, totalAmount } = req.body;
   const studentId = req.user.id;
 
 
-  const result = await findTutorAndBookingService.createBookingService(tutorId, studentId, date, subject, startTime, endTime);
+  const result = await findTutorAndBookingService.createBookingService(tutorId, studentId, date, subject, startTime, endTime, totalAmount);
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,

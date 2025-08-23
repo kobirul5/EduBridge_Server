@@ -68,7 +68,7 @@ const getTutorByIdService = async (id: string) => {
 
 
 const createBookingService = async (tutorId: string, studentId: string, date: Date, subject: string, startTime: Date,
-  endTime: Date) => {
+  endTime: Date, totalAmount: number) => {
 
   if (!tutorId || !date || !subject || !startTime || !endTime) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID, date and time are required');
@@ -86,6 +86,7 @@ const createBookingService = async (tutorId: string, studentId: string, date: Da
       subject: subject,
       startTime: startTime,
       endTime: endTime,
+      totalAmount: totalAmount
     },
   });
 

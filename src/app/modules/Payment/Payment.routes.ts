@@ -6,7 +6,7 @@ import auth from '../../middlewares/auth';
 
 const router = express.Router();
 
-router.post('/', PaymentController.createPrice);
+router.post('/', auth(), PaymentController.createPrice);
 // router.get('/prices', PaymentController.getAllPrices);
 // router.get('/prices/:id', PaymentController.getPriceById);
 // router.get('/package/:id', PaymentController.getPackageByPriceId);

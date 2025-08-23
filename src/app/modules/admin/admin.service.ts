@@ -183,17 +183,21 @@ const updateTutorRequestStatus = async ({ tutorId, adminId, status }: { tutorId:
 
 // get stats
 const getStatsService = async () => {
-  const tutorID = "6891301c439cc9b1ff04b027";
 
-  // Last 7 days
+  // Step 1: Prepare last 7 days dates (aj soho)
+
   const dateArray: string[] = [];
-  for (let i = 6; i >= 0; i--) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    if (d) {
-      dateArray.push(d.toISOString().split("T")[0]);
-    }
+
+    // Force YYYY-MM-DD in local timezone
+    const dateStr = d.toLocaleDateString("en-CA"); // en-CA => YYYY-MM-DD
+    dateArray.push(dateStr);
   }
+
+
+  // Step 2: Count total users (excluding admins and non-approved tutors)
 
   const userCount = await prisma.user.count({
     where: {
@@ -201,51 +205,54 @@ const getStatsService = async () => {
     },
   });
 
-  const tutorCount = await prisma.user.count({ where: { role: UserRole.TUTOR } });
-  const studentCount = await prisma.user.count({ where: { role: UserRole.STUDENT } });
+
+  // Step 3: Count total tutors
+
+  const tutorCount = await prisma.user.count({
+    where: { role: UserRole.TUTOR },
+  });
+
+
+  // Step 4: Count total students
+
+  const studentCount = await prisma.user.count({
+    where: { role: UserRole.STUDENT },
+  });
+
+
+  // Step 5: Get date 7 days ago
 
   const sevenDaysAgo = new Date();
-  if (sevenDaysAgo) {
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  }
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // 6 din age (aj soho total 7 din)
+
+
+  // Step 6: Count new users in last 7 days
 
   const newUserCount = await prisma.user.count({
-    where: { createdAt: { gte: sevenDaysAgo ?? new Date() } },
+    where: { createdAt: { gte: sevenDaysAgo } },
   });
 
-  const LastSevenDaysRaw = await prisma.payment.aggregateRaw({
-    pipeline: [
-      {
-        $match: {
-          createdAt: { $gte: sevenDaysAgo ?? new Date() },
-          tutorID,
-        },
-      },
-      { $addFields: { createdAtDate: { $toDate: "$createdAt" } } },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAtDate" } },
-          totalAmount: { $sum: "$amountPaid" },
-        },
-      },
-      { $sort: { "_id": 1 } },
-    ],
+
+  // Step 7: Aggregate payments from last 7 days
+
+  const paymentsByDay = await prisma.payment.groupBy({
+    by: ["createdAt"],
+    where: {
+      createdAt: { gte: sevenDaysAgo },
+    },
+    _sum: { amountPaid: true },
   });
 
-  if (!LastSevenDaysRaw) {
-    return {
-      totalUser: userCount,
-      totalTutors: tutorCount,
-      totalStudents: studentCount,
-      newUser: newUserCount,
-      lastSavedDay: [],
-    };
-  }
-
+  // Map to YYYY-MM-DD string
   const LastSevenDays = dateArray.map(date => {
-    const found = (LastSevenDaysRaw as any).find((d: any) => d._id === date);
-    return { date, totalAmount: found?.totalAmount ?? 0 };
+    const found = paymentsByDay.find(
+      d => new Date(d.createdAt).toLocaleDateString("en-CA") === date
+    );
+    return { date, amountPaid: found?._sum.amountPaid ?? 0 };
   });
+
+
+  // Step 9: Return final stats
 
   return {
     totalUser: userCount,
@@ -255,6 +262,7 @@ const getStatsService = async () => {
     lastSavedDay: LastSevenDays || [],
   };
 };
+
 
 // get warning tutors
 const getWarningTutorsService = async () => {

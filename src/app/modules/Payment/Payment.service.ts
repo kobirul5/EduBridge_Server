@@ -47,10 +47,12 @@ const createPaymentIntent = async ({
     throw new ApiError(httpStatus.BAD_REQUEST, "Payment already completed");
   }
 
+  console.log(bookingData.totalAmount);
+
   try {
     // Stripe payment create
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(bookingData.totalAmmount! * 100), // convert to cents
+      amount: Math.round(bookingData.totalAmount! * 100), // convert to cents
       currency,
       payment_method: paymentMethod,
       confirm: true,
@@ -60,7 +62,7 @@ const createPaymentIntent = async ({
         transactionId,
         studentId: userId,
         tutorId: bookingData.tutorId,
-        amount: bookingData.totalAmmount!.toString(),
+        amount: bookingData.totalAmount!,
       },
     });
 
@@ -70,7 +72,7 @@ const createPaymentIntent = async ({
         data: {
           bookingId: bookingId,
           transactionId,
-          amountPaid: bookingData.totalAmmount!,
+          amountPaid: bookingData.totalAmount!,
           paymentStatus: PaymentStatus.FAILED,
           studentID: userId,
           tutorID: bookingData.tutorId,
@@ -88,7 +90,7 @@ const createPaymentIntent = async ({
         data: {
           transactionId,
           bookingId: bookingId,
-          amountPaid: bookingData.totalAmmount!,
+          amountPaid: bookingData.totalAmount!,
           paymentStatus: PaymentStatus.COMPLETED,
           studentID: userId,
           tutorID: bookingData.tutorId,

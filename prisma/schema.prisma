@@ -139,7 +139,7 @@ model Booking {
   tutorId        String        @db.ObjectId
   studentId      String        @db.ObjectId
   subject        String        @default("")
-  totalAmmount   Float?
+  totalAmount   Float
   date           DateTime
   startTime      DateTime
   endTime        DateTime
