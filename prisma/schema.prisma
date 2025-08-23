@@ -24,7 +24,16 @@ enum BookingStatus {
   PENDING
   CONFIRMED
   COMPLETED
+  FAILED
   CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  FAILED
+  COMPLETED
+  CANCELLED
+  REFUNDED
 }
 
 enum TutorRequest {
@@ -104,18 +113,18 @@ model SavedTutor {
 }
 
 model Payment {
-  id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  studentID      String?  @default("")
-  tutorID        String   @db.ObjectId
-  amountPaid     Float?   @default(0)
-  paymentMethod  String?  @default("")
-  paymentStatus  String?  @default("PENDING")
-  paymentDate    DateTime @default(now())
-  paymentGateway String?  @default("")
-  transactionId  String?  @default("")
-  invoice_pdf    String?  @default("")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  studentID      String?       @default("") //sender
+  tutorID        String        @db.ObjectId // reciver
+  amountPaid     Float?        @default(0)
+  paymentMethod  String?       @default("")
+  paymentStatus  PaymentStatus @default(PENDING)
+  paymentDate    DateTime      @default(now())
+  paymentGateway String?       @default("")
+  transactionId  String?       @default("")
+  invoice_pdf    String?       @default("")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // Tutor relation
   tutor User @relation("TutorPayments", fields: [tutorID], references: [id])
@@ -130,6 +139,7 @@ model Booking {
   tutorId        String        @db.ObjectId
   studentId      String        @db.ObjectId
   subject        String        @default("")
+  totalAmmount   Float?
   date           DateTime
   startTime      DateTime
   endTime        DateTime

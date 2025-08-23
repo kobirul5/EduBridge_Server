@@ -89,8 +89,6 @@ const acceptOrCancelledBookingRequest = catchAsync(async (req:Request, res:Respo
     throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
   } 
 
-  console.log(BookingStatus, req.body);
-
   const data = req.body;
   if (!data.bookingStatus  || (data.bookingStatus !== BookingStatus.CONFIRMED && data.bookingStatus !== BookingStatus.CANCELLED)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Booking status is required and must be either 'CONFIRMED' or 'CANCELLED'");

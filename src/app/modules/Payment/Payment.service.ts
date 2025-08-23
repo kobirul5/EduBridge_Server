@@ -1,75 +1,123 @@
 
-// import { Request } from 'express';
-
-// import httpStatus from 'http-status';
-// import { JwtPayload } from 'jsonwebtoken';
-
-// import Stripe from 'stripe';
-// import prisma from '../../../shared/prisma';
-// import ApiError from '../../../errors/ApiErrors';
-// import { IUser } from '../User/user.interface';
-// import stripe from '../../../shared/stripe';
+import httpStatus from 'http-status';
+import prisma from '../../../shared/prisma';
+import ApiError from '../../../errors/ApiErrors';
+import stripe from '../../../shared/stripe';
+import { getTransactionId } from '../../../shared/getTransactionId';
+import { PaymentStatus } from '@prisma/client';
 
 
 
-// export interface IBuySubscription {
-//   email: string;
-//   priceId: string;
-//   methodId: string;
-//   couponId?: string;
-// }
-// const createPrice = async (payload: any) => {
-//   try {
-//     const result = await prisma.$transaction(async tx => {
-//       // Step 1: Create Product in Stripe
-//       const product = await stripe.products.create({
-//         name: payload.name,
-//         description: payload.description,
-//         active: payload.active,
-//       });
 
-//       const unitAmount = Math.round(payload.amount * 100);  // Ensure unit_amount is a valid integer
+const createPaymentIntent = async ({
+  paymentMethod,
+  bookingId,
+  currency = "usd",
+  userId,
+}: IPaymentIntent) => {
+  const transactionId = getTransactionId();
 
-//       // Step 2: Create Price in Stripe
-//       const price = await stripe.prices.create({
-//         currency: payload.currency,
-//         unit_amount: unitAmount,
-//         active: payload.active,
-//         recurring: {
-//           interval: payload.billingInterval,
-//           interval_count: payload.intervalCount,
-//           trial_period_days: payload.trialPeriodDays || null,
-//         },
-//         product: product.id,
-//       });
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
 
-//       // Step 3: Create Price Record in Database
-//       const dbPrice = await tx.price.create({
-//         data: {
-//           amount: Number(payload.amount.toFixed(2)) || 0,
-//           name: payload.name,
-//           currency: payload.currency,
-//           interval: payload.billingInterval,
-//           intervalCount: payload.intervalCount,
-//           freeTrailDays: payload.trialPeriodDays,
-//           productId: product.id,
-//           priceId: price.id,
-//           active: payload.active,
-//           description: payload.description,
-//           features: payload.features,
-//         },
-//       });
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
 
-//       return dbPrice;
-//     });
-//     return result;
-//   } catch (error: any) {
-//     throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, error.message);
-//   }
-//   // Add other methods like update, delete, find, etc.
-// };
+  // Find booking
+  const bookingData = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: {
+      student: true,
+      tutor: true,
+    },
+  });
 
-// // Read All Prices
+  if (!bookingData) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Service request not found");
+  }
+
+  if (!bookingData.isAccepted) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Service request is not Accepted");
+  }
+
+  if (bookingData.isPaymentDone) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Payment already completed");
+  }
+
+  try {
+    // Stripe payment create
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(bookingData.totalAmmount! * 100), // convert to cents
+      currency,
+      payment_method: paymentMethod,
+      confirm: true,
+      automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+      metadata: {
+        bookingId: bookingId,
+        transactionId,
+        studentId: userId,
+        tutorId: bookingData.tutorId,
+        amount: bookingData.totalAmmount!.toString(),
+      },
+    });
+
+    if (paymentIntent.status !== "succeeded") {
+      // Create failed payment record
+      await prisma.payment.create({
+        data: {
+          bookingId: bookingId,
+          transactionId,
+          amountPaid: bookingData.totalAmmount!,
+          paymentStatus: PaymentStatus.FAILED,
+          studentID: userId,
+          tutorID: bookingData.tutorId,
+          paymentMethod: "CARD",
+          paymentGateway: "STRIPE",
+        },
+      });
+
+      throw new ApiError(httpStatus.BAD_REQUEST, "Payment failed");
+    }
+
+    // Transaction (Payment + Booking update)
+    const payment = await prisma.$transaction(async (tx) => {
+      const paymentRecord = await tx.payment.create({
+        data: {
+          transactionId,
+          bookingId: bookingId,
+          amountPaid: bookingData.totalAmmount!,
+          paymentStatus: PaymentStatus.COMPLETED,
+          studentID: userId,
+          tutorID: bookingData.tutorId,
+          paymentMethod: "CARD",
+          paymentGateway: "STRIPE",
+          invoice_pdf: "",
+        },
+      });
+
+      await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          isPaymentDone: true,
+          bookingsStatus: "CONFIRMED",
+        },
+      });
+
+      return paymentRecord;
+    });
+
+    return payment;
+  } catch (error: any) {
+    console.error("Card payment error:", error);
+    throw new ApiError(httpStatus.BAD_REQUEST, error.message || "Payment failed");
+  }
+};
+
+
+// Read All Prices
 // const getAllPrices = async () => {
 //   const prices = await prisma.price.findMany();
 //   return prices;
@@ -643,8 +691,10 @@
 // const getAllPayments = () => {
 //   return prisma.paymentInfo.findMany({ orderBy: { createdAt: 'desc' } });
 // };
-// export const PaymentService = {
-//   createPrice,
+
+
+export const PaymentService = {
+  createPaymentIntent,
 //   getAllPrices,
 //   getPriceById,
 //   updatePrice,
@@ -660,4 +710,4 @@
 //   getMemberPlanCount,
 //   getAllPayments,
 //   getPackageByPriceId
-// };
+};

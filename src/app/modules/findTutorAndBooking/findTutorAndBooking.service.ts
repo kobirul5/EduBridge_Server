@@ -68,7 +68,7 @@ const getTutorByIdService = async (id: string) => {
 
 
 const createBookingService = async (tutorId: string, studentId: string, date: Date, subject: string, startTime: Date,
-endTime:Date) => {
+  endTime: Date) => {
 
   if (!tutorId || !date || !subject || !startTime || !endTime) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID, date and time are required');
@@ -102,7 +102,7 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
 
   const bookings = await prisma.booking.findMany({
     where: { studentId: studentId, NOT: { bookingsStatus: BookingStatus.CANCELLED } },
-    include: {  
+    include: {
       tutor: {
         select: {
           id: true,
@@ -135,7 +135,7 @@ const getBookingRequestService = async (tutorId: string) => {
   console.log("tutorId", tutorId);
 
   const bookingRequests = await prisma.booking.findMany({
-    where: { tutorId: tutorId , bookingsStatus: BookingStatus.PENDING },
+    where: { tutorId: tutorId, bookingsStatus: BookingStatus.PENDING },
     include: {
       student: {
         select: {
@@ -158,9 +158,34 @@ const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsSt
   if (!bookingId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
   }
+  const allowedStatuses: BookingStatus[] = [
+    BookingStatus.CONFIRMED,
+    BookingStatus.CANCELLED,
+  ];
+
+  if (!allowedStatuses.includes(bookingsStatus)) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Invalid booking status. Must be either 'CONFIRMED' or 'CANCELLED'"
+    );
+  }
+
+  if (bookingsStatus !== "CONFIRMED") {
+    const booking = await prisma.booking.update({
+      where: { id: bookingId },
+      data: { bookingsStatus: bookingsStatus, isAccepted: false },
+    });
+
+    if (!booking) {
+      throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+    }
+    return booking;
+  }
+
+
   const booking = await prisma.booking.update({
     where: { id: bookingId },
-    data: { bookingsStatus: bookingsStatus },
+    data: { bookingsStatus: bookingsStatus, isAccepted: true },
   });
   if (!booking) {
     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
@@ -172,11 +197,11 @@ const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsSt
 // get accepted booking for a tutor
 const getBookingRequestForTutorService = async (tutorId: string) => {
   if (!tutorId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token'); 
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
   }
 
   const acceptedBookings = await prisma.booking.findMany({
-    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED , isPaymentDone: true },
+    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED, isPaymentDone: true },
     include: {
       student: {
         select: {
@@ -189,16 +214,16 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
     },
   });
 
-const uniqueDates = await prisma.booking.groupBy({
-  by: ['date'],
-  // _count: { _all: true }, 
-  orderBy: { date: 'asc' }
-});
+  const uniqueDates = await prisma.booking.groupBy({
+    by: ['date'],
+    // _count: { _all: true }, 
+    orderBy: { date: 'asc' }
+  });
 
 
 
 
-return {uniqueDates,acceptedBookings};
+  return { uniqueDates, acceptedBookings };
 
 
 }
@@ -207,7 +232,7 @@ export const findTutorAndBookingService = {
   getAllTurorsService,
   getTutorByIdService,
   createBookingService,
-  getDailyScheduleAndBookingService, 
+  getDailyScheduleAndBookingService,
   getBookingRequestService,
   acceptOrRejectBookingRequestService,
   getBookingRequestForTutorService,

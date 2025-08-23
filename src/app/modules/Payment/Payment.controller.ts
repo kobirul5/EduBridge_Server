@@ -1,21 +1,25 @@
-// import { Request, Response } from 'express';
-// import { PaymentService } from './Payment.service';
-// import httpStatus from 'http-status';
-// import catchAsync from '../../../shared/catchAsync';
-// import sendResponse from '../../../shared/sendResponse';
-// import { IUser } from '../User/user.interface';
+import { Request, Response } from 'express';
+import { PaymentService } from './Payment.service';
+import httpStatus from 'http-status';
+import catchAsync from '../../../shared/catchAsync';
+import sendResponse from '../../../shared/sendResponse';
+import { IUser } from '../User/user.interface';
 
 
-// // Create Price
-// const createPrice = catchAsync(async (req: Request, res: Response) => {
-//   const result = await PaymentService.createPrice(req.body);
-//   sendResponse(res, {
-//     statusCode: httpStatus.CREATED,
-//     success: true,
-//     message: 'Price created successfully!',
-//     data: result,
-//   });
-// });
+// Create Price
+const createPrice = catchAsync(async (req: Request, res: Response) => {
+
+    const {paymentMethod, bookingId, currency} = req.body;
+    const userId = req.user.id
+
+  const result = await PaymentService.createPaymentIntent({paymentMethod, bookingId, currency, userId});
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: 'Payment  successfully!',
+    data: result,
+  });
+});
 
 // // Get All Prices
 // const getAllPrices = catchAsync(async (req: Request, res: Response) => {
@@ -173,8 +177,8 @@
 //   });
 // });
 
-// export const PaymentController = {
-//   createPrice,
+export const PaymentController = {
+  createPrice,
 //   getAllPrices,
 //   getPriceById,
 //   updatePrice,
@@ -190,4 +194,4 @@
 //   getMemberPlanCount,
 //   getAllPayments,
 //   getPackageByPriceId
-// };
+};

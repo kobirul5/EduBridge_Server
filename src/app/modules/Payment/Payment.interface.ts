@@ -1,4 +1,6 @@
-// export interface IPayment {
-// email: string;
-// // Add other fields here for Payment
-// }
+interface IPaymentIntent {
+  paymentMethod: string;
+  bookingId: string;
+  currency?: string;
+  userId: string;
+}
