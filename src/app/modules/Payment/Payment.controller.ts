@@ -9,10 +9,10 @@ import { IUser } from '../User/user.interface';
 // Create Price
 const createPrice = catchAsync(async (req: Request, res: Response) => {
 
-    const {paymentMethod, bookingId, currency} = req.body;
-    const userId = req.user.id
+  const { paymentMethod, bookingId, currency } = req.body;
+  const userId = req.user.id
 
-  const result = await PaymentService.createPaymentIntent({paymentMethod, bookingId, currency, userId});
+  const result = await PaymentService.createPaymentIntent({ paymentMethod, bookingId, currency, userId });
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
     success: true,
@@ -20,6 +20,20 @@ const createPrice = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+const getAllTutorEarning = catchAsync(async (req: Request, res: Response) => {
+
+  const userId = req.user.id
+
+  const result = await PaymentService.getAllTutorEarning(userId);
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: 'Payment  successfully!',
+    data: result,
+  });
+})
+
 
 // // Get All Prices
 // const getAllPrices = catchAsync(async (req: Request, res: Response) => {
@@ -179,19 +193,20 @@ const createPrice = catchAsync(async (req: Request, res: Response) => {
 
 export const PaymentController = {
   createPrice,
-//   getAllPrices,
-//   getPriceById,
-//   updatePrice,
-//   deletePrice,
-//   buySubscription,
-//   updateSubscription,
-//   cancelSubscription,
-//   handelPaymentWebhook,
-//   getLastDayTransaction,
-//   getAllRevenue,
-//   getMemberCount,
-//   monthlyStatistics,
-//   getMemberPlanCount,
-//   getAllPayments,
-//   getPackageByPriceId
+  getAllTutorEarning
+  //   getAllPrices,
+  //   getPriceById,
+  //   updatePrice,
+  //   deletePrice,
+  //   buySubscription,
+  //   updateSubscription,
+  //   cancelSubscription,
+  //   handelPaymentWebhook,
+  //   getLastDayTransaction,
+  //   getAllRevenue,
+  //   getMemberCount,
+  //   monthlyStatistics,
+  //   getMemberPlanCount,
+  //   getAllPayments,
+  //   getPackageByPriceId
 };

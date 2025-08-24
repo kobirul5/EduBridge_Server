@@ -223,7 +223,9 @@ const getStatsService = async () => {
   // Step 5: Get date 7 days ago
 
   const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // 6 din age (aj soho total 7 din)
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); 
+//  const thirtyDaysAgo = new Date();
+//   thirtyDaysAgo.setDate(sevenDaysAgo.getDate() - 30); 
 
 
   // Step 6: Count new users in last 7 days

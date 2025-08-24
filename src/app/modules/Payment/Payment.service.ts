@@ -4,7 +4,7 @@ import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import stripe from '../../../shared/stripe';
 import { getTransactionId } from '../../../shared/getTransactionId';
-import { PaymentStatus } from '@prisma/client';
+import { PaymentStatus, UserRole } from '@prisma/client';
 
 
 
@@ -117,6 +117,49 @@ const createPaymentIntent = async ({
     throw new ApiError(httpStatus.BAD_REQUEST, error.message || "Payment failed");
   }
 };
+
+
+const getAllTutorEarning = async (userId: string) => {
+
+  if (!userId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User id is required!");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId, role: UserRole.TUTOR },
+  });
+
+  if(!user){
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found!");
+  }
+
+  const totalBookings = await prisma.booking.count({
+    where: {
+      tutorId: userId,
+      isPaymentDone: true,
+    },
+  });
+
+
+    const result = await prisma.payment.aggregate({
+    _sum: {
+      amountPaid: true,
+    },
+    where: {
+      tutorID: userId,
+      paymentStatus: "COMPLETED", 
+    },
+  });
+
+  if (!result._sum.amountPaid) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Payment not found with this user!");
+  }
+
+  return {
+    totalEarning: result._sum.amountPaid,
+    totalBookings: totalBookings
+  };
+}
 
 
 // Read All Prices
@@ -697,6 +740,7 @@ const createPaymentIntent = async ({
 
 export const PaymentService = {
   createPaymentIntent,
+  getAllTutorEarning,
 //   getAllPrices,
 //   getPriceById,
 //   updatePrice,

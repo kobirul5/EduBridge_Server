@@ -2,11 +2,15 @@
 import express from 'express';
 import { PaymentController } from './Payment.controller';
 import auth from '../../middlewares/auth';
+import { UserRole } from '@prisma/client';
 
 
 const router = express.Router();
 
 router.post('/', auth(), PaymentController.createPrice);
+router.get('/tutor-earning',
+    auth(),
+    PaymentController.getAllTutorEarning);
 // router.get('/prices', PaymentController.getAllPrices);
 // router.get('/prices/:id', PaymentController.getPriceById);
 // router.get('/package/:id', PaymentController.getPackageByPriceId);
