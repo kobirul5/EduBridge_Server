@@ -18,7 +18,7 @@ router.post('/warning-send', auth(UserRole.ADMIN), adminController.warnTutorCont
 
 router.patch('/tutor-request-update', auth(UserRole.ADMIN), adminController.updateTutorRequestStatusController);
 router.get('/tutor-request/:tutorId', auth(UserRole.ADMIN), adminController.getTutorRequestByIdController);
-router.patch('/suspend-tutor/:userId', auth(UserRole.ADMIN), adminController.suspendTutorController);
+router.patch('/suspend-tutor/:tutorId', auth(UserRole.ADMIN), adminController.suspendTutorController);
 
 
 export const adminRoutes = router;

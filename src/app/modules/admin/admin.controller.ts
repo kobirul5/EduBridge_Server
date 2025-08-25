@@ -110,8 +110,8 @@ const {userId, message} = req.body
 const suspendTutorController = catchAsync(async (req, res) => {
 
   const adminId = req.user?.id;
-  const userId = req.params.tutorId;
-    const result = await adminService.suspendTutorService({userId, adminId});
+  const tutorId = req.params.tutorId;
+    const result = await adminService.suspendTutorService({tutorId, adminId});
 
 
     sendResponse(res, {

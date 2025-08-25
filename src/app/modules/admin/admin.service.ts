@@ -1,4 +1,4 @@
-import { TutorRequest, UserRole } from "@prisma/client";
+import { TutorRequest, UserRole, UserStatus } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
@@ -46,6 +46,12 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
     ];
   }
 
+  
+  where.status = {
+    not: UserStatus.SUSPENDED
+  }
+
+
   // Fetch data
   const [data, total] = await Promise.all([
     prisma.user.findMany({
@@ -69,13 +75,13 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
   ]);
 
   return {
-    data,
     meta: {
       page: Number(page),
       limit: Number(limit),
       total,
       totalPage: Math.ceil(total / Number(limit)),
     },
+    data,
   };
 };
 
@@ -357,15 +363,48 @@ const warnTutorService = async ({ userId, adminId, message }: { userId: string, 
 }
 
 // get warning tutors
-const suspendTutorService = async ({ userId, adminId }: { userId: string, adminId: string }) => {
+const suspendTutorService = async ({ tutorId, adminId }: { tutorId: string, adminId: string }) => {
 
   if (!adminId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "unauthorized request!");
   }
 
-  if (!userId) {
+  if (!tutorId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User id is required!");
   }
+
+  const tutor = await prisma.user.findUnique({
+    where: { id: tutorId, role: UserRole.TUTOR },
+  });
+  if (!tutor) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Tutor not found!");
+  }
+
+  if(tutor.status === UserStatus.SUSPENDED){
+    throw new ApiError(httpStatus.BAD_REQUEST, "Tutor is already suspended!");
+  }
+
+
+  const result = await prisma.user.update({
+    where: { id: tutorId },
+    data: {
+      status: UserStatus.SUSPENDED,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+      status: true,
+      subject: true,
+      profileImage: true,
+      about: true,
+      createdAt: true,
+      updatedAt: true
+    }
+  })
+
+  return result
 }
 
 
