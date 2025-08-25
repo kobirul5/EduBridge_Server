@@ -8,20 +8,16 @@ import { UserRole } from '@prisma/client';
 const router = express.Router();
 
 router.post('/', auth(), PaymentController.createPrice);
-router.get('/tutor-earning',
+router.get(
+    '/tutor-earning',
     auth(),
-    PaymentController.getAllTutorEarning);
-// router.get('/prices', PaymentController.getAllPrices);
-// router.get('/prices/:id', PaymentController.getPriceById);
-// router.get('/package/:id', PaymentController.getPackageByPriceId);
-// router.put('/prices/:id', PaymentController.updatePrice);
-// router.delete('/prices/:id', PaymentController.deletePrice);
-// router.get('/last-day', PaymentController.getLastDayTransaction)
-// router.get('/all-revenue', PaymentController.getAllRevenue)
-// router.get('/all-member', PaymentController.getMemberCount)
-// router.get('/monthly-statistic', PaymentController.monthlyStatistics)
-// router.get('/membership', PaymentController.getMemberPlanCount)
-// router.get('/', PaymentController.getAllPayments)
+    PaymentController.getAllTutorEarning
+);
+
+router.get('/get-all-payments', auth(UserRole.ADMIN), PaymentController.getAllPayment);
+router.get('/get-payment/:id', auth(), PaymentController.getSinglePayment);
+
+router.get('/my-payments', auth(), PaymentController.getMyPayments);
 
 
 export const paymentRoutes = router;
