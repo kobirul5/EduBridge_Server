@@ -277,6 +277,8 @@ export function setupWebSocket(server: Server) {
           default:
             console.log("Unknown event type:", parsedData.event);
         }
+
+        await handleCallEvents(ws, parsedData);
       } catch (error) {
         console.error("Error handling WebSocket message:", error);
       }
@@ -299,6 +301,8 @@ export function setupWebSocket(server: Server) {
   return wss;
 }
 
+
+
 function broadcastToAll(wss: WebSocketServer, message: object) {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
@@ -307,6 +311,94 @@ function broadcastToAll(wss: WebSocketServer, message: object) {
   });
 }
 
+
+
+async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
+  const { event } = parsedData;
+
+  switch (event) {
+    case "callUser": {
+      const { toUserId, offer, callType } = parsedData;
+
+      if (!ws.userId) {
+        ws.send(JSON.stringify({ event: "error", message: "User not authenticated." }));
+        return;
+      }
+
+      if (!callType || !["audio", "video"].includes(callType)) {
+        ws.send(JSON.stringify({ event: "error", message: "callType must be 'audio' or 'video'." }));
+        return;
+      }
+
+      const receiverSocket = userSockets.get(toUserId);
+      if (receiverSocket && receiverSocket.readyState === WebSocket.OPEN) {
+        receiverSocket.send(
+          JSON.stringify({
+            event: "incomingCall",
+            data: { fromUserId: ws.userId, offer, callType },
+          })
+        );
+      } else {
+        ws.send(JSON.stringify({ event: "error", message: "Receiver not available." }));
+      }
+      break;
+    }
+
+    case "answerCall": {
+      const { toUserId, answer } = parsedData;
+
+      if (!ws.userId) return;
+
+      const callerSocket = userSockets.get(toUserId);
+      if (callerSocket && callerSocket.readyState === WebSocket.OPEN) {
+        callerSocket.send(
+          JSON.stringify({
+            event: "callAnswered",
+            data: { fromUserId: ws.userId, answer },
+          })
+        );
+      }
+      break;
+    }
+
+    case "iceCandidate": {
+      const { toUserId, candidate } = parsedData;
+
+      if (!ws.userId) return;
+
+      const peerSocket = userSockets.get(toUserId);
+      if (peerSocket && peerSocket.readyState === WebSocket.OPEN) {
+        peerSocket.send(
+          JSON.stringify({
+            event: "iceCandidate",
+            data: { fromUserId: ws.userId, candidate },
+          })
+        );
+      }
+      break;
+    }
+
+    case "disconnectCall": {
+      const { toUserId } = parsedData;
+
+      if (!ws.userId) return;
+
+      const peerSocket = userSockets.get(toUserId);
+      if (peerSocket && peerSocket.readyState === WebSocket.OPEN) {
+        peerSocket.send(
+          JSON.stringify({
+            event: "callDisconnected",
+            data: { fromUserId: ws.userId, message: "Call disconnected." },
+          })
+        );
+      }
+      break;
+    }
+
+    default:
+      ws.send(JSON.stringify({ event: "error", message: "Unknown call event." }));
+  }
+}
 
 
 
