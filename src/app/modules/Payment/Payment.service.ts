@@ -155,9 +155,26 @@ const getAllTutorEarning = async (userId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Payment not found with this user!");
   }
 
+
+  // Total new (last 7 days) bookings
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const totalNewBooking = await prisma.booking.count({
+    where: {
+      tutorId: userId,
+      isPaymentDone: false,
+      createdAt: {
+        gte: sevenDaysAgo, 
+      },
+    },
+  });
+
+
   return {
     totalEarning: result._sum.amountPaid,
-    totalBookings: totalBookings
+    totalBookings: totalBookings,
+    totalNewBooking: totalNewBooking
   };
 }
 

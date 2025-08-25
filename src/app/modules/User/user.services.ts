@@ -142,6 +142,20 @@ const postDemoVideo = async (file: any, userId: string) => {
     throw new ApiError(httpStatus.BAD_REQUEST, "Filed to Upload video")
   }
 
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if(user.role !== 'TUTOR') {
+    throw new ApiError(httpStatus.BAD_REQUEST, "You are not a Tutor!, Only Tutors can upload demo videos");
+  }
+
+
   const data = await prisma.user.update({
     where: { id: userId },
     data: {
