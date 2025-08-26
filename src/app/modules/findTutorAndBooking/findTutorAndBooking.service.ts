@@ -47,6 +47,7 @@ const getTutorByIdService = async (id: string) => {
       subject: true,
       rating: true,
       studentReviewes: true,
+      demoClassUrl: true,
       role: true,
       profileImage: true,
       education: true,
