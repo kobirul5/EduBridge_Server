@@ -11,7 +11,7 @@ const getAllTutorStats = async ({ tutorId }: { tutorId: string }) => {
 
   // 2. Total Bookings (for this tutor)
   const totalBookings = await prisma.booking.count({
-    where: { tutorId: tutorId, isPaymentDone: true }
+    where: { tutorId: tutorId, paymentStatus: "COMPLETED" }
   });
 
   // 3. New Bookings (today only, for this tutor)

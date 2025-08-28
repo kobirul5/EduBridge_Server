@@ -39,13 +39,13 @@ const createPaymentIntent = async ({
     throw new ApiError(httpStatus.NOT_FOUND, "Service request not found");
   }
 
-  if (!bookingData.isAccepted) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Service request is not Accepted");
-  }
+  // if (!bookingData.isAccepted) {
+  //   throw new ApiError(httpStatus.BAD_REQUEST, "Service request is not Accepted");
+  // }
 
-  if (bookingData.isPaymentDone) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Payment already completed");
-  }
+  // if (bookingData.isPaymentDone) {
+  //   throw new ApiError(httpStatus.BAD_REQUEST, "Payment already completed");
+  // }
 
   console.log(bookingData.totalAmount);
 
@@ -103,7 +103,7 @@ const createPaymentIntent = async ({
       await tx.booking.update({
         where: { id: bookingId },
         data: {
-          isPaymentDone: true,
+          paymentStatus: "COMPLETED",
           bookingsStatus: "CONFIRMED",
         },
       });
@@ -136,7 +136,7 @@ const getAllTutorEarning = async (userId: string) => {
   const totalBookings = await prisma.booking.count({
     where: {
       tutorId: userId,
-      isPaymentDone: true,
+     paymentStatus: "COMPLETED",
     },
   });
 
@@ -163,7 +163,7 @@ const getAllTutorEarning = async (userId: string) => {
   const totalNewBooking = await prisma.booking.count({
     where: {
       tutorId: userId,
-      isPaymentDone: false,
+      paymentStatus: 'PENDING',
       createdAt: {
         gte: sevenDaysAgo, 
       },

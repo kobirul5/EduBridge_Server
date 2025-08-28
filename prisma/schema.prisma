@@ -144,8 +144,9 @@ model Booking {
   startTime      DateTime
   endTime        DateTime
   bookingsStatus BookingStatus @default(PENDING)
-  isAccepted     Boolean       @default(false)
-  isPaymentDone  Boolean       @default(false)
+  // isAccepted     Boolean       @default(false)
+  // isPaymentDone  Boolean       @default(false)
+  paymentStatus     PaymentStatus   @default(PENDING)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   // Relations to users acting as tutor and student:

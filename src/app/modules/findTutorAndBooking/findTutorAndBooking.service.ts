@@ -175,7 +175,7 @@ const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsSt
   if (bookingsStatus !== "CONFIRMED") {
     const booking = await prisma.booking.update({
       where: { id: bookingId },
-      data: { bookingsStatus: bookingsStatus, isAccepted: false },
+      data: { bookingsStatus: bookingsStatus },
     });
 
     if (!booking) {
@@ -187,7 +187,7 @@ const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsSt
 
   const booking = await prisma.booking.update({
     where: { id: bookingId },
-    data: { bookingsStatus: bookingsStatus, isAccepted: true },
+    data: { bookingsStatus: bookingsStatus },
   });
   if (!booking) {
     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
@@ -203,7 +203,7 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
   }
 
   const acceptedBookings = await prisma.booking.findMany({
-    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED, isPaymentDone: true },
+    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED },
     include: {
       student: {
         select: {
