@@ -7,7 +7,7 @@ import httpStatus from 'http-status';
 
 const getAllStats = catchAsync(async (req, res) => {
   const sitterId = req.user.id
-  const result = await tutorService.getAllTutorStats(sitterId);
+  const result = await tutorService.getAllTutorStatsWithDaily(sitterId);
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
