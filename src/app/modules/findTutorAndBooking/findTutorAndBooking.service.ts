@@ -1,4 +1,4 @@
-import { BookingStatus, UserRole } from "@prisma/client";
+import { BookingStatus, PaymentStatus, UserRole } from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
@@ -12,7 +12,7 @@ import { get } from "http";
 const getAllTurorsService = async () => {
 
   const tutors = await prisma.user.findMany({
-    where: { role: UserRole.TUTOR },
+    where: { role: UserRole.TUTOR, isTutorApproved: true },
     select: {
       id: true,
       fullName: true,
@@ -203,7 +203,7 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
   }
 
   const acceptedBookings = await prisma.booking.findMany({
-    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED },
+    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED, paymentStatus: PaymentStatus.COMPLETED },
     include: {
       student: {
         select: {
@@ -230,6 +230,80 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
 
 }
 
+
+// filter tutor services
+const getAllFilterTutorsService = async (req:any) => {
+  let { subject, search, page = 1, limit = 10 } = req.query;
+
+   if (subject) {
+    if (Array.isArray(subject)) {
+      subject = subject.map(s => s.toLowerCase());
+    } else {
+      subject = subject.toLowerCase();
+    }
+  }
+
+
+  // page, limit number 
+  const pageNum = Number(page) || 1;
+  const limitNum = Number(limit) || 10;
+  const skip = (pageNum - 1) * limitNum;
+
+  // where condition
+  const whereCondition = {
+    role: UserRole.TUTOR,
+    isTutorApproved: true,
+    ...(subject && {
+      subject: {
+        has: subject, 
+      },
+    }),
+    ...(search && {
+      fullName: {
+        contains: search,
+        mode: "insensitive",
+      },
+    }),
+  };
+
+  
+  const total = await prisma.user.count({ where: whereCondition });
+
+  // data query
+  const tutors = await prisma.user.findMany({
+    where: whereCondition,
+    skip,
+    take: limitNum,
+    orderBy: { createdAt: "desc" }, 
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      hourlyRate: true,
+      subject: true,
+      rating: true,
+      role: true,
+      studentReviewes: true,
+      profileImage: true,
+      education: true,
+      experience: true,
+      about: true,
+      createdAt: true,
+    },
+  });
+
+  return {
+    meta: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+    },
+    data: tutors,
+  };
+};
+
+
 export const findTutorAndBookingService = {
   getAllTurorsService,
   getTutorByIdService,
@@ -238,5 +312,6 @@ export const findTutorAndBookingService = {
   getBookingRequestService,
   acceptOrRejectBookingRequestService,
   getBookingRequestForTutorService,
+  getAllFilterTutorsService
 
 };

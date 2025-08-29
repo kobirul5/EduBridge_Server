@@ -106,7 +106,7 @@ const acceptOrCancelledBookingRequest = catchAsync(async (req:Request, res:Respo
 });
 
 
-
+// get accepted booking for tutor
 const getAcceptedBookingForTutor = catchAsync(async (req, res) => {
   const tutorId = req.user.id;
   const result = await findTutorAndBookingService.getBookingRequestForTutorService(tutorId);
@@ -118,6 +118,15 @@ const getAcceptedBookingForTutor = catchAsync(async (req, res) => {
   });
 });
 
+const getAllFilterTurorsController = catchAsync(async (req, res) => {
+  const result = await findTutorAndBookingService.getAllFilterTutorsService(req);
+  sendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: 'Filter turors retrieved successfully!',
+    data: result,
+  });
+});
 
 
 
@@ -131,5 +140,5 @@ export const findTutorAndBookingController = {
   getBookingRequestForTutor,
   acceptOrCancelledBookingRequest,
   getAcceptedBookingForTutor,
-  
+  getAllFilterTurorsController
 };
