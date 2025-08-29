@@ -232,10 +232,10 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
 
 
 // filter tutor services
-const getAllFilterTutorsService = async (req:any) => {
-  let { subject, search, page = 1, limit = 10 } = req.query;
+const getAllFilterTutorsService = async (req: any) => {
+  let { subject, search, page = 1, limit = 10, minPrice, maxPrice } = req.query;
 
-   if (subject) {
+  if (subject) {
     if (Array.isArray(subject)) {
       subject = subject.map(s => s.toLowerCase());
     } else {
@@ -255,7 +255,7 @@ const getAllFilterTutorsService = async (req:any) => {
     isTutorApproved: true,
     ...(subject && {
       subject: {
-        has: subject, 
+        has: subject,
       },
     }),
     ...(search && {
@@ -266,7 +266,12 @@ const getAllFilterTutorsService = async (req:any) => {
     }),
   };
 
-  
+  if (minPrice || maxPrice) {
+    whereCondition.hourlyRate = {};
+    if (minPrice) whereCondition.hourlyRate.gte = Number(minPrice);
+    if (maxPrice) whereCondition.hourlyRate.lte = Number(maxPrice);
+  }
+
   const total = await prisma.user.count({ where: whereCondition });
 
   // data query
@@ -274,7 +279,7 @@ const getAllFilterTutorsService = async (req:any) => {
     where: whereCondition,
     skip,
     take: limitNum,
-    orderBy: { createdAt: "desc" }, 
+    orderBy: { createdAt: "desc" },
     select: {
       id: true,
       fullName: true,

@@ -46,7 +46,7 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
     ];
   }
 
-  
+
   where.status = {
     not: UserStatus.SUSPENDED
   }
@@ -189,87 +189,98 @@ const updateTutorRequestStatus = async ({ tutorId, adminId, status }: { tutorId:
 
 // get stats
 const getStatsService = async () => {
-
-  // Step 1: Prepare last 7 days dates (aj soho)
-
-  const dateArray: string[] = [];
+  // Step 1: Prepare last 7 days dates (YYYY-MM-DD)
+  const dateArray7: string[] = [];
   for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-
-    // Force YYYY-MM-DD in local timezone
-    const dateStr = d.toLocaleDateString("en-CA"); // en-CA => YYYY-MM-DD
-    dateArray.push(dateStr);
+    const dateStr = d.toLocaleDateString("en-CA");
+    dateArray7.push(dateStr);
   }
 
+  // Step 2: Prepare last 30 days dates (YYYY-MM-DD)
+  const dateArray30: string[] = [];
+  for (let i = 0; i < 30; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toLocaleDateString("en-CA");
+    dateArray30.push(dateStr);
+  }
 
-  // Step 2: Count total users (excluding admins and non-approved tutors)
-
+  // Step 3: Count total users (excluding admins and non-approved tutors)
   const userCount = await prisma.user.count({
     where: {
       NOT: { role: UserRole.ADMIN, isTutorApproved: false },
     },
   });
 
-
-  // Step 3: Count total tutors
-
+  // Step 4: Count total tutors
   const tutorCount = await prisma.user.count({
     where: { role: UserRole.TUTOR },
   });
 
-
-  // Step 4: Count total students
-
+  // Step 5: Count total students
   const studentCount = await prisma.user.count({
     where: { role: UserRole.STUDENT },
   });
 
-
-  // Step 5: Get date 7 days ago
-
+  // Step 6: Date boundaries
   const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); 
-//  const thirtyDaysAgo = new Date();
-//   thirtyDaysAgo.setDate(sevenDaysAgo.getDate() - 30); 
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
 
-  // Step 6: Count new users in last 7 days
-
-  const newUserCount = await prisma.user.count({
+  // Step 7: Count new users in last 7 days
+  const newUserCount7 = await prisma.user.count({
     where: { createdAt: { gte: sevenDaysAgo } },
   });
 
+  // Step 8: Count new users in last 30 days
+  const newUserCount30 = await prisma.user.count({
+    where: { createdAt: { gte: thirtyDaysAgo } },
+  });
 
-  // Step 7: Aggregate payments from last 7 days
-
-  const paymentsByDay = await prisma.payment.groupBy({
+  // Step 9: Payments last 7 days (group by day)
+  const paymentsByDay7 = await prisma.payment.groupBy({
     by: ["createdAt"],
-    where: {
-      createdAt: { gte: sevenDaysAgo },
-    },
+    where: { createdAt: { gte: sevenDaysAgo } },
     _sum: { amountPaid: true },
   });
 
-  // Map to YYYY-MM-DD string
-  const LastSevenDays = dateArray.map(date => {
-    const found = paymentsByDay.find(
+  const LastSevenDays = dateArray7.map(date => {
+    const found = paymentsByDay7.find(
       d => new Date(d.createdAt).toLocaleDateString("en-CA") === date
     );
     return { date, amountPaid: found?._sum.amountPaid ?? 0 };
   });
 
+  // Step 10: Payments last 30 days (group by day)
+  const paymentsByDay30 = await prisma.payment.groupBy({
+    by: ["createdAt"],
+    where: { createdAt: { gte: thirtyDaysAgo } },
+    _sum: { amountPaid: true },
+  });
 
-  // Step 9: Return final stats
+  const LastThirtyDays = dateArray30.map(date => {
+    const found = paymentsByDay30.find(
+      d => new Date(d.createdAt).toLocaleDateString("en-CA") === date
+    );
+    return { date, amountPaid: found?._sum.amountPaid ?? 0 };
+  });
 
+  // Step 11: Return final stats
   return {
     totalUser: userCount,
     totalTutors: tutorCount,
     totalStudents: studentCount,
-    newUser: newUserCount,
-    lastSavedDay: LastSevenDays || [],
+    newUser7: newUserCount7,
+    newUser30: newUserCount30,
+    last7Days: LastSevenDays || [],
+    last30Days: LastThirtyDays || [],
   };
 };
+
 
 
 // get warning tutors
@@ -380,7 +391,7 @@ const suspendTutorService = async ({ tutorId, adminId }: { tutorId: string, admi
     throw new ApiError(httpStatus.NOT_FOUND, "Tutor not found!");
   }
 
-  if(tutor.status === UserStatus.SUSPENDED){
+  if (tutor.status === UserStatus.SUSPENDED) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Tutor is already suspended!");
   }
 
