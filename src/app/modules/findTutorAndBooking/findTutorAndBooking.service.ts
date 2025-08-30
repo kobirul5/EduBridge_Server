@@ -217,17 +217,12 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
   });
 
   const uniqueDates = await prisma.booking.groupBy({
-    by: ['date'],
-    // _count: { _all: true }, 
-    orderBy: { date: 'asc' }
+    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED, paymentStatus: PaymentStatus.COMPLETED },
+    by: ['startTime'],
+    orderBy: { startTime: 'asc' }
   });
 
-
-
-
   return { uniqueDates, acceptedBookings };
-
-
 }
 
 
