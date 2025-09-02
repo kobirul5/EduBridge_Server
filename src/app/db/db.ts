@@ -8,6 +8,9 @@ export const initiateSuperAdmin = async () => {
     "123456789",
     Number(config.bcrypt_salt_rounds)
   );
+
+  // const hashedPassword = await bcrypt.hash(userData.password, Number(config.bcrypt_salt_rounds));
+
   const payload: any = {
     email: "admin@raalaaan.com",
     phoneNumber: "1234567890",

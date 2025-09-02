@@ -108,6 +108,7 @@ const getTutorRequest = async ({ adminId }: { adminId: string }) => {
       isTutorApproved: true,
       isTutorRequest: true,
       tutorRequestStatus: true,
+      profileImage: true,
       email: true,
       role: true,
       subject: true,

@@ -229,37 +229,43 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
 // filter tutor services
 const getAllFilterTutorsService = async (req: any) => {
   let { subject, search, page = 1, limit = 10, minPrice, maxPrice } = req.query;
-
-  if (subject) {
+if (subject) {
     if (Array.isArray(subject)) {
-      subject = subject.map(s => s.toLowerCase());
+      subject = subject.map((s) => s.toLowerCase());
     } else {
       subject = subject.toLowerCase();
     }
   }
 
-
-  // page, limit number 
+  // Pagination
   const pageNum = Number(page) || 1;
   const limitNum = Number(limit) || 10;
   const skip = (pageNum - 1) * limitNum;
 
-  // where condition
-  const whereCondition = {
+  // Base where condition
+  const whereCondition: any = {
     role: UserRole.TUTOR,
     isTutorApproved: true,
-    ...(subject && {
-      subject: {
-        has: subject,
-      },
-    }),
-    ...(search && {
-      fullName: {
-        contains: search,
-        mode: "insensitive",
-      },
-    }),
   };
+
+  // Subject filter
+  if (subject) {
+    if (Array.isArray(subject)) {
+      whereCondition.subject = { hasSome: subject }; // array contains at least one
+    } else {
+      whereCondition.subject = { has: subject }; // array contains single subject
+    }
+  }
+
+  // Search filter
+  if (search) {
+    whereCondition.OR = [
+      { fullName: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { about: { contains: search, mode: "insensitive" } },
+      { subject: { has: search.toLowerCase() } }, // works with array<string>
+    ];
+  }
 
   if (minPrice || maxPrice) {
     whereCondition.hourlyRate = {};
