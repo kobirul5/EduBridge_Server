@@ -77,17 +77,17 @@ const getWarningTutorsController = catchAsync(async (req, res) => {
   });
 })
 
-// // get wallet
-// const getWalletController = catchAsync(async (req, res) => {
+// get wallet
+const getWalletController = catchAsync(async (req, res) => {
 
-//   const result = await adminService.getWalletService();
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: 'Wallet fetched successfully!',
-//     data: result,
-//   });
-// })
+  const result = await adminService.getWalletService();
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Wallet fetched successfully!',
+    data: result,
+  });
+})
 
 // warnTutorController 
 const warnTutorController = catchAsync(async (req, res) => {
@@ -129,7 +129,7 @@ export const adminController = {
   updateTutorRequestStatusController,
   getStatsController,
   getWarningTutorsController,
-  // getWalletController,
+  getWalletController,
   warnTutorController,
   suspendTutorController
 

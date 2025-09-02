@@ -84,6 +84,7 @@ model User {
 
   // Payments related to user as tutor:
   tutorPayments Payment[] @relation("TutorPayments")
+  studentPayments Payment[] @relation("StudentPayments")
 
   // Bookings where user is tutor or student:
   tutorBookings   Booking[]    @relation("TutorBookings")
@@ -114,7 +115,9 @@ model SavedTutor {
 
 model Payment {
   id             String        @id @default(auto()) @map("_id") @db.ObjectId
-  studentID      String?       @default("") //sender
+  studentID String? @db.ObjectId
+student   User?   @relation("StudentPayments", fields: [studentID], references: [id])
+
   tutorID        String        @db.ObjectId // reciver
   amountPaid     Float?        @default(0)
   paymentMethod  String?       @default("")

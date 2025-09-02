@@ -344,8 +344,69 @@ const getWarningTutorsService = async () => {
 
 
 
-//   return {result, total};
+//   return {total: total._sum.amountPaid, result};
 // }
+
+const getWalletService = async () => {
+  const now = new Date();
+
+  // ===== This Week Range =====
+  const startOfThisWeek = new Date(now);
+  startOfThisWeek.setDate(now.getDate() - now.getDay()); 
+  startOfThisWeek.setHours(0, 0, 0, 0);
+
+  // ===== Total Income =====
+  const total = await prisma.payment.aggregate({
+    _sum: { amountPaid: true }
+  });
+
+  // ===== Last Week Income =====
+  const lastWeekTotal = await prisma.payment.aggregate({
+    _sum: { amountPaid: true },
+    where: {
+      createdAt: { lt: startOfThisWeek } 
+    }
+  });
+
+  const totalAmount = total._sum.amountPaid ?? 0;
+  const lastWeekAmount = lastWeekTotal._sum.amountPaid ?? 0;
+  const lastWeekPercentage = totalAmount > 0 ? (lastWeekAmount / totalAmount) * 100 : 0;
+
+
+  // =====  =====
+  const thisWeekAmount = totalAmount - lastWeekAmount;
+
+  // ===== =====
+  let percentageChange = 0;
+  if (lastWeekAmount > 0) {
+    percentageChange = (thisWeekAmount / lastWeekAmount) * 100;
+  }
+
+    const result = await prisma.payment.findMany({
+    select: {
+      id: true,
+      amountPaid: true,
+      // createdAt: true,
+      studentID: true,
+      student:{
+        select: {
+          fullName: true,
+          profileImage: true,
+          email: true
+        }
+      }
+    }
+  });
+
+  return {
+    total: totalAmount,
+    lastWeek: lastWeekAmount,
+    thisWeek: thisWeekAmount,
+    percentageChange: lastWeekPercentage.toFixed(2),
+    user: result
+  };
+};
+
 
 // get warning tutors
 const warnTutorService = async ({ userId, adminId, message }: { userId: string, message: string, adminId: string }) => {
@@ -427,7 +488,7 @@ export const adminService = {
   updateTutorRequestStatus,
   getStatsService,
   getWarningTutorsService,
-  // getWalletService,
+  getWalletService,
   warnTutorService,
   suspendTutorService
 };

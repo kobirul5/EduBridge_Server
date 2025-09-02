@@ -13,7 +13,7 @@ router.get('/tutor-request', auth(UserRole.ADMIN), adminController.getTutorReque
 router.get('/stats', auth(UserRole.ADMIN), adminController.getStatsController);
 router.get('/warning-tutors', auth(UserRole.ADMIN), adminController.getWarningTutorsController);
 router.post('/warning-send', auth(UserRole.ADMIN), adminController.warnTutorController);
-// router.get('/my-wallet', auth(UserRole.ADMIN), adminController.getWalletController);
+router.get('/my-wallet', auth(UserRole.ADMIN), adminController.getWalletController);
 
 
 router.patch('/tutor-request-update', auth(UserRole.ADMIN), adminController.updateTutorRequestStatusController);
