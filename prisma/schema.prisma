@@ -52,6 +52,7 @@ model User {
   city               String?      @default("")
   status             UserStatus   @default(ACTIVE)
   fcmToken           String?      @default("")
+  isOnline           Boolean?     @default(false)
   profileImage       String?      @default("")
   hourlyRate         Float?       @default(0.0)
   demoClassUrl       String?      @default("")
@@ -83,7 +84,7 @@ model User {
   notificationsReceived Notification[] @relation("Receiver")
 
   // Payments related to user as tutor:
-  tutorPayments Payment[] @relation("TutorPayments")
+  tutorPayments   Payment[] @relation("TutorPayments")
   studentPayments Payment[] @relation("StudentPayments")
 
   // Bookings where user is tutor or student:
@@ -114,9 +115,9 @@ model SavedTutor {
 }
 
 model Payment {
-  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
   studentID String? @db.ObjectId
-student   User?   @relation("StudentPayments", fields: [studentID], references: [id])
+  student   User?   @relation("StudentPayments", fields: [studentID], references: [id])
 
   tutorID        String        @db.ObjectId // reciver
   amountPaid     Float?        @default(0)
@@ -142,14 +143,14 @@ model Booking {
   tutorId        String        @db.ObjectId
   studentId      String        @db.ObjectId
   subject        String        @default("")
-  totalAmount   Float
+  totalAmount    Float
   date           DateTime
   startTime      DateTime
   endTime        DateTime
   bookingsStatus BookingStatus @default(PENDING)
   // isAccepted     Boolean       @default(false)
   // isPaymentDone  Boolean       @default(false)
-  paymentStatus     PaymentStatus   @default(PENDING)
+  paymentStatus  PaymentStatus @default(PENDING)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   // Relations to users acting as tutor and student:

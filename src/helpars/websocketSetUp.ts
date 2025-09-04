@@ -49,6 +49,11 @@ export function setupWebSocket(server: Server) {
             onlineUsers.add(id);
             userSockets.set(id, ws);
 
+            await prisma.user.update({
+              where: { id: user.id },
+              data: { isOnline: true },
+            });
+
             broadcastToAll(wss, {
               event: "userStatus",
               data: { userId: id, isOnline: true },
@@ -284,10 +289,14 @@ export function setupWebSocket(server: Server) {
       }
     });
 
-    ws.on("close", () => {
+    ws.on("close", async() => {
       if (ws.userId) {
         onlineUsers.delete(ws.userId);
         userSockets.delete(ws.userId);
+        await prisma.user.update({
+          where: { id: ws.userId },
+          data: { isOnline: false },
+        });
 
         broadcastToAll(wss, {
           event: "userStatus",
@@ -405,14 +414,14 @@ async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
 
 
 
-// // authenticate event 
+// // authenticate event
 
 // {
 //   "event": "authenticate",
 //   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MzRhZjgwM2Y1ZjZiNDZkYzczNGQzZSIsImVtYWlsIjoic2Fzb2xvdjk3NEBvZnVsYXIuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NDgyODMyODQsImV4cCI6MTc3OTgxOTI4NH0.tXjUf2Uljdj008YmmYu8R3CRyEh5LWSF9lG4re0jfKs"
 // }
 
-// // single message event 
+// // single message event
 
 // {
 //     "event": "message",
@@ -421,35 +430,35 @@ async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
 //     "images": []
 // }
 
-// // project event , own data seen 
+// // project event , own data seen
 // {
 //     "event": "project"
 // }
 
 
 
-// // fetchChats event 
+// // fetchChats event
 
 // {
 //     "event": "fetchChats",
 //     "receiverId": "395839458392"
 // }
 
-// // unReadMessages 
+// // unReadMessages
 
 // {
 //     "event": "unReadMessages",
 //     "receiverId": "935903890523"
 // }
 
-// //messageList single 
+// //messageList single
 
 // {
 //     "event": "messageList",
 
 // }
 
-// //groupMessage 
+// //groupMessage
 
 // {
 //     "event": "groupMessage",
