@@ -288,37 +288,59 @@ const getStatsService = async () => {
 // get warning tutors
 const getWarningTutorsService = async () => {
 
-  const lowRatingUsers = await prisma.user.findMany({
-    where: {
-      tutorReview: {
-        some: { rating: 1 }
-      }
-    },
-    include: {
-      tutorReview: {
-        where: { rating: 1 }
-      }
-    }
-  });
-
-
-
-  // const result = await prisma.user.findMany({
-  //   where: { rating:  {gt: 0, lte: 1 } },
-  //   select: {
-  //     id: true,
-  //     fullName: true,
-  //     experience: true,
-  //     isTutorApproved: true,
-  //     isTutorRequest: true,
-  //     tutorRequestStatus: true,
-  //     rating: true,
-  //     email: true,
-  //     role: true,
-  //     subject: true,
-  //     createdAt: true,
+  // const lowRatingUsers = await prisma.user.findMany({
+  //   where: {
+  //     tutorReview: {
+  //       some: { rating: 1 }
+  //     }
+  //   },
+  //   include: {
+  //     tutorReview: {
+  //       where: { rating: 1 },
+  //       include: {
+  //         student: {
+  //           select: {
+  //             id: true,
+  //             fullName: true,
+  //             email: true,
+  //             profileImage: true,
+  //           }
+  //         }
+  //       }
+  //     }
   //   }
   // });
+
+  const lowRatingUsers = await prisma.user.findMany({
+  where: {
+    tutorReview: {
+      some: { rating: 1 }
+    }
+  },
+  select: { // explicitly choose fields for the main user
+    id: true,
+    fullName: true,
+    email: true,
+    profileImage: true,
+    createdAt: true,
+    role: true,
+    tutorReview: {
+      where: { rating: 1 },
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            profileImage: true,
+            // role: true
+          }
+        }
+      }
+    }
+  }
+});
+
   return lowRatingUsers;
 };
 
