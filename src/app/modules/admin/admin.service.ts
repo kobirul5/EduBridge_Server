@@ -66,6 +66,7 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
         isTutorApproved: true,
         isTutorRequest: true,
         tutorRequestStatus: true,
+        isOnline: true,
         role: true,
         subject: true,
         createdAt: true,
