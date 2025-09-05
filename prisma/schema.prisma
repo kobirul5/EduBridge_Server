@@ -197,6 +197,7 @@ model Notification {
   senderId   String   @db.ObjectId
   receiver   User     @relation("Receiver", fields: [receiverId], references: [id])
   sender     User     @relation("Sender", fields: [senderId], references: [id])
+  type       NotificationType @default(GENERAL)
   title      String
   body       String
   isRead     Boolean  @default(false)
@@ -237,4 +238,11 @@ model Warning {
   updatedAt DateTime @updatedAt
 
   @@map("warnings")
+}
+
+enum NotificationType {
+  GENERAL
+  REMINDER
+  BOOKING
+  PAYMENT
 }

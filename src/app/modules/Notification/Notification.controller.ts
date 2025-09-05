@@ -5,7 +5,7 @@ import { notificationServices } from "./Notification.service";
 
 
 const sendNotification = catchAsync(async (req: any, res: any) => {
-  const notification = await notificationServices.sendSingleNotification(req);
+  const notification = await notificationServices.sendNotification(req.body);
 
   sendResponse(res, {
     statusCode: 200,

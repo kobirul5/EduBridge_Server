@@ -1,128 +1,202 @@
+import { NotificationType } from "@prisma/client";
 import ApiError from "../../../errors/ApiErrors";
 import prisma from "../../../shared/prisma";
 import admin from "./firebaseAdmin";
+import httpStatus from "http-status";
+
+interface INotificationPayload {
+    title: string;
+    body: string;
+    receiverId: string;
+    fcmToken?: string;
+    senderId: string;
+    type: NotificationType;
+    data?: string;
+}
+
 
 // Send notification to a single user
-const sendSingleNotification = async (req: any) => {
-    try {
-        const { receiverId } = req.params;
+// const sendSingleNotification = async (req: any) => {
+//     try {
+//         const { receiverId } = req.params;
 
+//         const { title, body } = req.body;
+
+//         if (!title || !body) {
+//             throw new ApiError(400, "Title and body are required");
+//         }
+
+//         console.log(receiverId, title, body);
+
+//         const user = await prisma.user.findUnique({
+//             where: { id: receiverId },
+//         });
+//         // console.log(user)
+//         // console.log(user?.fcmToken);
+//         if (!user || !user.fcmToken) {
+//             throw new ApiError(404, "User not found or FCM token not found");
+//         }
+
+//         const message = {
+//             notification: {
+//                 title,
+//                 body,
+//             },
+//             // token: user.fcmToken,
+//         };
+
+//         const response = await prisma.notification.create({
+//             data: {
+//                 receiverId: receiverId,
+//                 senderId: req.user.id,
+//                 title,
+//                 body,
+//             },
+//         });
+
+//          await admin.messaging().send(message);
+//         return response;
+//     } catch (error: any) {
+//         console.error("Error sending notification:", error);
+//         if (error.code === "messaging/invalid-registration-token") {
+//             throw new ApiError(400, "Invalid FCM registration token");
+//         } else if (error.code === "messaging/registration-token-not-registered") {
+//             throw new ApiError(404, "FCM token is no longer registered");
+//         } else {
+//             throw new ApiError(500, error.message || "Failed to send notification");
+//         }
+//     }
+// };
+
+
+const sendNotification = async (
+    payload: INotificationPayload,
+) => {
+    // Ensure that deviceToken is a single string and not an array.
+    if (!payload.fcmToken || typeof payload.fcmToken !== "string") {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid device token");
+    }
+
+
+    const { title, body } = payload;
+
+    if (!title || !body) {
+        throw new ApiError(400, "Title and body are required");
+    }
+
+    // Create the message object.
+    const message = {
+        notification: {
+            title: payload.title,
+            body: payload.body,
+        },
+        data: {
+            type: payload.type,
+            data: payload.data || "",
+            receiverId: payload.receiverId,
+            // slug: payload.slug || "",
+        },
+        token: payload.fcmToken,
+    };
+
+    try {
+        console.log(
+            "Sending notification to token:",
+            payload.fcmToken,
+            "with payload:",
+            message
+        );
+
+        // Send notification using Firebase Admin SDK
+        const response = await admin.messaging().send(message);
+        console.log("Notification sent successfully");
+        const responseDB = await prisma.notification.create({
+            data: {
+                receiverId: payload.receiverId,
+                senderId: payload.senderId,
+                title: payload.title,
+                body: payload.body,
+            },
+        });
+
+
+        console.log("Notification sent successfully");
+    } catch (error) {
+        console.error("Firebase send error:", error); // Add this line
+        // if (error instanceof ApiError) throw error;
+        // throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send notification');
+    }
+};
+
+
+// Send notifications to all users with valid FCM tokens
+const sendNotifications = async (req: any) => {
+    try {
         const { title, body } = req.body;
 
         if (!title || !body) {
             throw new ApiError(400, "Title and body are required");
         }
 
-        console.log(receiverId, title, body);
-
-        const user = await prisma.user.findUnique({
-            where: { id: receiverId },
+        const users = await prisma.user.findMany({
+            where: {
+                fcmToken: {
+                    not: null,
+                },
+            },
+            select: {
+                id: true,
+                fcmToken: true,
+            },
         });
-        // console.log(user)
-        // console.log(user?.fcmToken);
-        if (!user || !user.fcmToken) {
-            throw new ApiError(404, "User not found or FCM token not found");
+
+        if (!users || users.length === 0) {
+            return
         }
+
+        const fcmTokens = users.map((user) => user.fcmToken);
 
         const message = {
             notification: {
                 title,
                 body,
             },
-            // token: user.fcmToken,
+            tokens: fcmTokens,
         };
 
-        const response = await prisma.notification.create({
-            data: {
-                receiverId: receiverId,
-                senderId: req.user.id,
-                title,
-                body,
-            },
+        const response = await admin
+            .messaging()
+            .sendEachForMulticast(message as any);
+
+        const successIndices = response.responses
+            .map((res: any, idx: number) => (res.success ? idx : null))
+            .filter((_, idx: number) => idx !== null) as number[];
+
+        const successfulUsers = successIndices.map((idx) => users[idx]);
+
+        const notificationData = successfulUsers.map((user) => ({
+            receiverId: user.id,
+            senderId: req.user.id,
+            title,
+            body,
+        }));
+
+        await prisma.notification.createMany({
+            data: notificationData,
         });
 
-        // const response = await admin.messaging().send(message);
-        return response;
+        const failedTokens = response.responses
+            .map((res: any, idx: number) => (!res.success ? fcmTokens[idx] : null))
+            .filter((token): token is string => token !== null);
+
+        return {
+            successCount: response.successCount,
+            failureCount: response.failureCount,
+            failedTokens,
+        };
     } catch (error: any) {
-        console.error("Error sending notification:", error);
-        if (error.code === "messaging/invalid-registration-token") {
-            throw new ApiError(400, "Invalid FCM registration token");
-        } else if (error.code === "messaging/registration-token-not-registered") {
-            throw new ApiError(404, "FCM token is no longer registered");
-        } else {
-            throw new ApiError(500, error.message || "Failed to send notification");
-        }
+        throw new ApiError(500, error.message || "Failed to send notifications");
     }
-};
-
-// Send notifications to all users with valid FCM tokens
-const sendNotifications = async (req: any) => {
-  try {
-    const { title, body } = req.body;
-
-    if (!title || !body) {
-      throw new ApiError(400, "Title and body are required");
-    }
-
-    const users = await prisma.user.findMany({
-      where: {
-        fcmToken: {
-          not: null,
-        },
-      },
-      select: {
-        id: true,
-        fcmToken: true,
-      },
-    });
-
-    if (!users || users.length === 0) {
-      return
-    }
-
-    const fcmTokens = users.map((user) => user.fcmToken);
-
-    const message = {
-      notification: {
-        title,
-        body,
-      },
-      tokens: fcmTokens,
-    };
-
-    const response = await admin
-      .messaging()
-      .sendEachForMulticast(message as any);
-
-    const successIndices = response.responses
-      .map((res: any, idx: number) => (res.success ? idx : null))
-      .filter((_, idx: number) => idx !== null) as number[];
-
-    const successfulUsers = successIndices.map((idx) => users[idx]);
-
-    const notificationData = successfulUsers.map((user) => ({
-      receiverId: user.id,
-      senderId: req.user.id,
-      title,
-      body,
-    }));
-
-    await prisma.notification.createMany({
-      data: notificationData,
-    });
-
-    const failedTokens = response.responses
-      .map((res: any, idx: number) => (!res.success ? fcmTokens[idx] : null))
-      .filter((token): token is string => token !== null);
-
-    return {
-      successCount: response.successCount,
-      failureCount: response.failureCount,
-      failedTokens,
-    };
-  } catch (error: any) {
-    throw new ApiError(500, error.message || "Failed to send notifications");
-  }
 };
 
 // Fetch notifications for the current user
@@ -212,8 +286,6 @@ const getSingleNotificationFromDB = async (
             },
         });
 
-
-        
         // Mark the notification as read
         const updatedNotification = await prisma.notification.update({
             where: { id: notificationId },
@@ -289,8 +361,8 @@ const deleteNotificationFromDB = async (req: any, notificationId: string) => {
 }
 
 export const notificationServices = {
-    sendSingleNotification,
-      sendNotifications,
+    sendNotification,
+    sendNotifications,
     getNotificationsFromDB,
     getSingleNotificationFromDB,
     deleteNotificationFromDB
