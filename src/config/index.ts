@@ -24,6 +24,13 @@ export default {
     stripe: {
         secret_key: process.env.STRIPE_SECRET_KEY,
         webhook_secret: process.env.STRIPE_WEBHOOK_SECRET
-    }
+    },
+    digitalOcean: {
+    endpoint: process.env.DO_SPACE_ENDPOINT,
+    originEndpoint: process.env.DO_SPACE_ORIGIN_ENDPOINT,
+    accessKey: process.env.DO_SPACE_ACCESS_KEY,
+    secretKey: process.env.DO_SPACE_SECRET_KEY,
+    bucket: process.env.DO_SPACE_BUCKET,
+  },
 
 }

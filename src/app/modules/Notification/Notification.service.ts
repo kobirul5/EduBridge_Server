@@ -1,6 +1,6 @@
 import ApiError from "../../../errors/ApiErrors";
 import prisma from "../../../shared/prisma";
-// import admin from "./firebaseAdmin";
+import admin from "./firebaseAdmin";
 
 // Send notification to a single user
 const sendSingleNotification = async (req: any) => {
@@ -56,74 +56,74 @@ const sendSingleNotification = async (req: any) => {
 };
 
 // Send notifications to all users with valid FCM tokens
-// const sendNotifications = async (req: any) => {
-//   try {
-//     const { title, body } = req.body;
+const sendNotifications = async (req: any) => {
+  try {
+    const { title, body } = req.body;
 
-//     if (!title || !body) {
-//       throw new ApiError(400, "Title and body are required");
-//     }
+    if (!title || !body) {
+      throw new ApiError(400, "Title and body are required");
+    }
 
-//     const users = await prisma.user.findMany({
-//       where: {
-//         fcmToken: {
-//           not: null,
-//         },
-//       },
-//       select: {
-//         id: true,
-//         fcmToken: true,
-//       },
-//     });
+    const users = await prisma.user.findMany({
+      where: {
+        fcmToken: {
+          not: null,
+        },
+      },
+      select: {
+        id: true,
+        fcmToken: true,
+      },
+    });
 
-//     if (!users || users.length === 0) {
-//       return
-//     }
+    if (!users || users.length === 0) {
+      return
+    }
 
-//     const fcmTokens = users.map((user) => user.fcmToken);
+    const fcmTokens = users.map((user) => user.fcmToken);
 
-//     const message = {
-//       notification: {
-//         title,
-//         body,
-//       },
-//       tokens: fcmTokens,
-//     };
+    const message = {
+      notification: {
+        title,
+        body,
+      },
+      tokens: fcmTokens,
+    };
 
-//     const response = await admin
-//       .messaging()
-//       .sendEachForMulticast(message as any);
+    const response = await admin
+      .messaging()
+      .sendEachForMulticast(message as any);
 
-//     const successIndices = response.responses
-//       .map((res: any, idx: number) => (res.success ? idx : null))
-//       .filter((_, idx: number) => idx !== null) as number[];
+    const successIndices = response.responses
+      .map((res: any, idx: number) => (res.success ? idx : null))
+      .filter((_, idx: number) => idx !== null) as number[];
 
-//     const successfulUsers = successIndices.map((idx) => users[idx]);
+    const successfulUsers = successIndices.map((idx) => users[idx]);
 
-//     const notificationData = successfulUsers.map((user) => ({
-//       receiverId: user.id,
-//       senderId: req.user.id,
-//       title,
-//       body,
-//     }));
+    const notificationData = successfulUsers.map((user) => ({
+      receiverId: user.id,
+      senderId: req.user.id,
+      title,
+      body,
+    }));
 
-//     await prisma.notification.createMany({
-//       data: notificationData,
-//     });
+    await prisma.notification.createMany({
+      data: notificationData,
+    });
 
-//     const failedTokens = response.responses
-//       .map((res: any, idx: number) => (!res.success ? fcmTokens[idx] : null))
-//       .filter((token): token is string => token !== null);
+    const failedTokens = response.responses
+      .map((res: any, idx: number) => (!res.success ? fcmTokens[idx] : null))
+      .filter((token): token is string => token !== null);
 
-//     return {
-//       successCount: response.successCount,
-//       failureCount: response.failureCount,
-//       failedTokens,
-//     };
-//   } catch (error: any) {
-//     throw new ApiError(500, error.message || "Failed to send notifications");
-//   }
-// };
+    return {
+      successCount: response.successCount,
+      failureCount: response.failureCount,
+      failedTokens,
+    };
+  } catch (error: any) {
+    throw new ApiError(500, error.message || "Failed to send notifications");
+  }
+};
 
 // Fetch notifications for the current user
 // Fetch notifications for the current user
@@ -288,7 +288,7 @@ const deleteNotificationFromDB = async (req: any, notificationId: string) => {
 
 export const notificationServices = {
     sendSingleNotification,
-    //   sendNotifications,
+      sendNotifications,
     getNotificationsFromDB,
     getSingleNotificationFromDB,
     deleteNotificationFromDB
