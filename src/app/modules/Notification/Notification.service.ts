@@ -69,62 +69,66 @@ interface INotificationPayload {
 // };
 
 
-const sendNotification = async (
-    payload: INotificationPayload,
-) => {
-    // Ensure that deviceToken is a single string and not an array.
-    if (!payload.fcmToken || typeof payload.fcmToken !== "string") {
-        throw new ApiError(httpStatus.BAD_REQUEST, "Invalid device token");
-    }
-
-
-    const { title, body } = payload;
+const sendNotification = async (payload: INotificationPayload) => {
+    const { title, body, fcmToken, receiverId, senderId, type, data } = payload;
 
     if (!title || !body) {
         throw new ApiError(400, "Title and body are required");
     }
 
-    // Create the message object.
+    if (!fcmToken || typeof fcmToken !== "string") {
+        throw new ApiError(404, "FCM token not found or invalid");
+    }
+
     const message = {
-        notification: {
-            title: payload.title,
-            body: payload.body,
-        },
+        notification: { title, body },
         data: {
-            type: payload.type,
-            data: payload.data || "",
-            receiverId: payload.receiverId,
-            // slug: payload.slug || "",
+            type: type || "default",
+            data: JSON.stringify(data || ""),
+            receiverId: String(receiverId),
         },
-        token: payload.fcmToken,
+        token: fcmToken,
     };
 
     try {
-        console.log(
-            "Sending notification to token:",
-            payload.fcmToken,
-            "with payload:",
-            message
-        );
+        console.log("Sending notification:", message);
 
-        // Send notification using Firebase Admin SDK
         const response = await admin.messaging().send(message);
-        console.log("Notification sent successfully");
+
+        // Save in DB only if FCM sent successfully
+        const responseDB = await prisma.notification.create({
+            data: { receiverId, senderId, title, body },
+        });
+
+        return { success: true, notification: responseDB, fcmResponse: response };
+    } catch (error) {
+        console.error("Firebase send error:", error);
+        throw new ApiError(500, "Failed to send notification");
+    }
+};
+
+
+const saveNotification = async (payload: INotificationPayload) => {
+    const { title, body, receiverId, senderId } = payload;
+
+    if (!title || !body) {
+        throw new ApiError(400, "Title and body are required");
+    }
+
+    try {
         const responseDB = await prisma.notification.create({
             data: {
-                receiverId: payload.receiverId,
-                senderId: payload.senderId,
-                title: payload.title,
-                body: payload.body,
+                receiverId,
+                senderId,
+                title,
+                body,
             },
         });
 
-
-        console.log("Notification sent successfully");
+        return { success: true, notification: responseDB };
     } catch (error) {
-        console.error("Firebase send error:", error); // Add this line
-        // if (error instanceof ApiError) throw error;
-        // throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send notification');
+        console.error("DB save error:", error);
+        throw new ApiError(500, "Failed to save notification");
     }
 };
 
@@ -363,6 +367,7 @@ const deleteNotificationFromDB = async (req: any, notificationId: string) => {
 export const notificationServices = {
     sendNotification,
     sendNotifications,
+    saveNotification,
     getNotificationsFromDB,
     getSingleNotificationFromDB,
     deleteNotificationFromDB
