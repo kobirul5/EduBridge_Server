@@ -212,6 +212,8 @@ const getSingleNotificationFromDB = async (
             },
         });
 
+
+        
         // Mark the notification as read
         const updatedNotification = await prisma.notification.update({
             where: { id: notificationId },
