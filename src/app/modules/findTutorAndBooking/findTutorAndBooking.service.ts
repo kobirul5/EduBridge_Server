@@ -1,16 +1,18 @@
-import { BookingStatus, PaymentStatus, UserRole } from "@prisma/client";
+import {
+  BookingStatus,
+  NotificationType,
+  PaymentStatus,
+  UserRole,
+} from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
 import { get } from "http";
-
+import { notificationService } from "../Notification/Notification.service";
 
 // TODO: Create a service to handle features related to finding tutors and booking sessions
 
-
-
 const getAllTurorsService = async () => {
-
   const tutors = await prisma.user.findMany({
     where: { role: UserRole.TUTOR, isTutorApproved: true },
     select: {
@@ -27,14 +29,14 @@ const getAllTurorsService = async () => {
       experience: true,
       about: true,
       createdAt: true,
-    }
+    },
   });
 
   if (!tutors || tutors.length === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No tutors found");
   }
   return tutors;
-}
+};
 
 const getTutorByIdService = async (id: string) => {
   const user = await prisma.user.findUnique({
@@ -66,18 +68,29 @@ const getTutorByIdService = async (id: string) => {
   return user;
 };
 
-
-
-const createBookingService = async (tutorId: string, studentId: string, date: Date, subject: string, startTime: Date,
-  endTime: Date, totalAmount: number) => {
-
+const createBookingService = async (
+  tutorId: string,
+  studentId: string,
+  date: Date,
+  subject: string,
+  startTime: Date,
+  endTime: Date,
+  totalAmount: number
+) => {
   if (!tutorId || !date || !subject || !startTime || !endTime) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Tutor ID, date and time are required');
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Tutor ID, date and time are required"
+    );
   }
   if (!studentId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
+    throw new ApiError(httpStatus.BAD_REQUEST, "Expire token or invalid token");
   }
 
+  const tutor = await prisma.user.findUnique({ where: { id: tutorId } });
+  if (!tutor || tutor.role !== UserRole.TUTOR) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Tutor not found");
+  }
 
   const booking = await prisma.booking.create({
     data: {
@@ -87,23 +100,67 @@ const createBookingService = async (tutorId: string, studentId: string, date: Da
       subject: subject,
       startTime: startTime,
       endTime: endTime,
-      totalAmount: totalAmount
+      totalAmount: totalAmount,
     },
+    // include: {
+    //   tutor: true
+    // }
   });
 
   if (!booking) {
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to create booking");
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to create booking"
+    );
+  }
+
+  // Send notification to teacher about new booking request
+  if (booking.tutorId && tutor?.fcmToken) {
+    await notificationService.sendNotification(
+      tutor.fcmToken,
+      {
+        title: "You Have a New Booking Request From a Student",
+        body: `You Have a new booking request from a student for subject ${booking.subject} on ${booking.date}. Please check your bookings to confirm or reject the request.`,
+        type: NotificationType.BOOKING,
+        data: JSON.stringify({
+          tutorId: booking.tutorId,
+          subject: booking.subject,
+        }),
+        targetId: tutorId,
+        slug: "new-booking-request",
+      },
+      tutor.id
+    );
+  }
+  if (booking.tutorId) {
+    await notificationService.saveNotification(
+      {
+        title: "You Have a New Booking Request From a Student",
+        body: `You Have a new booking request from a student for subject ${booking.subject} on ${booking.date}. Please check your bookings to confirm or reject the request.`,
+        type: NotificationType.BOOKING,
+        data: JSON.stringify({
+          tutorId: booking.tutorId,
+          subject: booking.subject,
+        }),
+        targetId: tutorId,
+        slug: "new-booking-request",
+      },
+      tutor.id
+    );
   }
   return booking;
-}
+};
 // get daily schedule and booking for a student
 const getDailyScheduleAndBookingService = async (studentId: string) => {
   if (!studentId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
+    throw new ApiError(httpStatus.BAD_REQUEST, "Expire token or invalid token");
   }
 
   const bookings = await prisma.booking.findMany({
-    where: { studentId: studentId, NOT: { bookingsStatus: BookingStatus.CANCELLED } },
+    where: {
+      studentId: studentId,
+      NOT: { bookingsStatus: BookingStatus.CANCELLED },
+    },
     include: {
       tutor: {
         select: {
@@ -116,7 +173,7 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
           rating: true,
           experience: true,
           hourlyRate: true,
-        }
+        },
       },
       // Payment:true
     },
@@ -126,12 +183,12 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "No bookings found");
   }
   return bookings;
-}
+};
 
 // get booking request for a tutor
 const getBookingRequestService = async (tutorId: string) => {
   if (!tutorId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
+    throw new ApiError(httpStatus.BAD_REQUEST, "Expire token or invalid token");
   }
 
   console.log("tutorId", tutorId);
@@ -145,20 +202,22 @@ const getBookingRequestService = async (tutorId: string) => {
           fullName: true,
           email: true,
           profileImage: true,
-        }
+        },
       },
     },
   });
 
-
   return bookingRequests;
-}
+};
 
 // accept or reject booking request
 
-const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsStatus: BookingStatus) => {
+const acceptOrRejectBookingRequestService = async (
+  bookingId: string,
+  bookingsStatus: BookingStatus
+) => {
   if (!bookingId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
+    throw new ApiError(httpStatus.BAD_REQUEST, "Booking ID is required");
   }
   const allowedStatuses: BookingStatus[] = [
     BookingStatus.CONFIRMED,
@@ -184,7 +243,6 @@ const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsSt
     return booking;
   }
 
-
   const booking = await prisma.booking.update({
     where: { id: bookingId },
     data: { bookingsStatus: bookingsStatus },
@@ -192,18 +250,68 @@ const acceptOrRejectBookingRequestService = async (bookingId: string, bookingsSt
   if (!booking) {
     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
   }
-  return booking;
-}
 
+  const student = await prisma.user.findUnique({
+    where: { id: booking.studentId },
+  });
+
+  if (!student) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Student not found");
+  }
+
+  // Send notification to courier about cash payment
+  if (booking.studentId && student?.fcmToken) {
+    await notificationService.sendNotification(
+      student.fcmToken,
+      {
+        title: "Your Booking Request Has Been Updated By Tutor",
+        body: `Your booking request for subject ${booking.subject} on ${
+          booking.date
+        } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
+        type: NotificationType.BOOKING,
+        data: JSON.stringify({
+          tutorId: booking.tutorId,
+          subject: booking.subject,
+        }),
+        targetId: student.id,
+        slug: "booking-request-updated",
+      },
+      student.id
+    );
+  }
+  if (booking.studentId) {
+    await notificationService.saveNotification(
+      {
+        title: "Your Booking Request Has Been Updated By Tutor",
+        body: `Your booking request for subject ${booking.subject} on ${
+          booking.date
+        } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
+        type: NotificationType.BOOKING,
+        data: JSON.stringify({
+          tutorId: booking.tutorId,
+          subject: booking.subject,
+        }),
+        targetId: student.id,
+        slug: "booking-request-updated",
+      },
+      student.id
+    );
+  }
+  return booking;
+};
 
 // get accepted booking for a tutor
 const getBookingRequestForTutorService = async (tutorId: string) => {
   if (!tutorId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, 'Expire token or invalid token');
+    throw new ApiError(httpStatus.BAD_REQUEST, "Expire token or invalid token");
   }
 
   const acceptedBookings = await prisma.booking.findMany({
-    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED, paymentStatus: PaymentStatus.COMPLETED },
+    where: {
+      tutorId: tutorId,
+      bookingsStatus: BookingStatus.CONFIRMED,
+      paymentStatus: PaymentStatus.COMPLETED,
+    },
     include: {
       student: {
         select: {
@@ -211,25 +319,28 @@ const getBookingRequestForTutorService = async (tutorId: string) => {
           fullName: true,
           email: true,
           profileImage: true,
-        }
+        },
       },
     },
   });
 
   const uniqueDates = await prisma.booking.groupBy({
-    where: { tutorId: tutorId, bookingsStatus: BookingStatus.CONFIRMED, paymentStatus: PaymentStatus.COMPLETED },
-    by: ['startTime'],
-    orderBy: { startTime: 'asc' }
+    where: {
+      tutorId: tutorId,
+      bookingsStatus: BookingStatus.CONFIRMED,
+      paymentStatus: PaymentStatus.COMPLETED,
+    },
+    by: ["startTime"],
+    orderBy: { startTime: "asc" },
   });
 
   return { uniqueDates, acceptedBookings };
-}
-
+};
 
 // filter tutor services
 const getAllFilterTutorsService = async (req: any) => {
   let { subject, search, page = 1, limit = 10, minPrice, maxPrice } = req.query;
-if (subject) {
+  if (subject) {
     if (Array.isArray(subject)) {
       subject = subject.map((s) => s.toLowerCase());
     } else {
@@ -309,7 +420,6 @@ if (subject) {
   };
 };
 
-
 export const findTutorAndBookingService = {
   getAllTurorsService,
   getTutorByIdService,
@@ -318,6 +428,5 @@ export const findTutorAndBookingService = {
   getBookingRequestService,
   acceptOrRejectBookingRequestService,
   getBookingRequestForTutorService,
-  getAllFilterTutorsService
-
+  getAllFilterTutorsService,
 };

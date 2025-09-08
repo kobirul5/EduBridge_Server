@@ -1,32 +1,41 @@
+// Notification.routes: Module file for the Notification.routes functionality.
 import express from "express";
+import { NotificationController } from "./Notification.controller";
 import auth from "../../middlewares/auth";
-import { notificationController } from "./Notification.controller";
 
 const router = express.Router();
 
-router.post(
-  "/send-notification/:receiverId",
-  auth(),
-  notificationController.sendNotification
-);
+router.post("/send", auth(), NotificationController.sendNotificationToUser);
 
-// router.post(
-//   "/send-notification",
-//   auth(),
-//   notificationController.sendNotifications
-// );
+// Get all notifications
+router.get("/", auth(), NotificationController.getAllNotificationsController);
 
-router.get("/", auth(), notificationController.getNotifications);
+// Get notifications by user ID
 router.get(
-  "/:notificationId",
+  "/get",
   auth(),
-  notificationController.getSingleNotificationById
+  NotificationController.getNotificationByUserIdController
 );
 
+// Mark notifications as read by user ID
+router.put(
+  "/read",
+  auth(),
+  NotificationController.readNotificationByUserIdController
+);
+
+// Delete notification by id
 router.delete(
-  "/:notificationId",
+  "/delete/:id",
   auth(),
-  notificationController.deleteNotification
+  NotificationController.deleteNotificationByIdController
 );
 
-export const notificationsRoute = router;
+// Delete all notifications for the authenticated user
+router.delete(
+  "/delete-all",
+  auth(),
+  NotificationController.deleteAllNotificationsController
+);
+
+export const NotificationRoutes = router;

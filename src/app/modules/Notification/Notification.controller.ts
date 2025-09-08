@@ -1,80 +1,170 @@
-
+// Notification.controller: Module file for the Notification.controller functionality.
+import { notificationService } from "./Notification.service";
+import httpStatus from "http-status";
+import { Request, Response } from "express";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
-import { notificationServices } from "./Notification.service";
+import { NotificationType } from "@prisma/client";
+// import catchAsync from '../../utils/catchAsync';
+// import sendResponse from '../../utils/sendResponse';
 
+const sendNotificationToUser = catchAsync(
+  async (req: Request, res: Response) => {
+    const {
+      deviceToken,
+      title,
+      body,
+      type = NotificationType.GENERAL,
+      data = "",
+      targetId = "",
+      slug = "",
+    } = req.body;
 
-const sendNotification = catchAsync(async (req: any, res: any) => {
-  const notification = await notificationServices.sendNotification(req.body);
+    if (!deviceToken || !title || !body) {
+      return sendResponse(res, {
+        statusCode: httpStatus.BAD_REQUEST,
+        success: false,
+        message: "Device token, title, and body are required!",
+        data: null,
+      });
+    }
+
+    const notificationPayload = {
+      title,
+      body,
+      type,
+      data: data.toString(),
+      targetId,
+      slug,
+    };
+
+    await notificationService.sendNotification(
+      deviceToken,
+      notificationPayload,
+      req.user?.id
+    );
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Notification sent successfully",
+      data: null,
+    });
+  }
+);
+
+const saveNotification = catchAsync(async (req: Request, res: Response) => {
+  const {
+    deviceToken,
+    title,
+    body,
+    type = NotificationType.GENERAL,
+    data = "",
+    targetId = "",
+    slug = "",
+  } = req.body;
+
+  const notificationPayload = {
+    title,
+    body,
+    type,
+    data: data.toString(),
+    targetId,
+    slug,
+  };
+
+  await notificationService.saveNotification(notificationPayload, req.user?.id);
 
   sendResponse(res, {
-    statusCode: 200,
+    statusCode: httpStatus.OK,
     success: true,
-    message: "notification sent successfully",
-    data: notification,
+    message: "Notification saved successfully",
+    data: null,
   });
 });
 
-// const sendNotifications = catchAsync(async (req: any, res: any) => {
-//   const notifications = await notificationServices.sendNotifications(req);
+const getAllNotificationsController = catchAsync(
+  async (req: Request, res: Response) => {
+    const notifications = await notificationService.getAllNotifications();
 
-//   sendResponse(res, {
-//     statusCode: 200,
-//     success: true,
-//     message: "notifications sent successfully",
-//     data: notifications,
-//   });
-// });
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "All notifications fetched successfully",
+      data: notifications,
+    });
+  }
+);
 
-const getNotifications = catchAsync(async (req: any, res: any) => {
-  const notifications = await notificationServices.getNotificationsFromDB(req);
+const getNotificationByUserIdController = catchAsync(
+  async (req: Request, res: Response) => {
+    const notifications = await notificationService.getNotificationByUserId(
+      req.user?.id
+    );
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Notifications retrieved successfully",
-    data: notifications,
-  });
-});
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Notifications fetched successfully",
+      data: notifications,
+    });
+  }
+);
 
-const getSingleNotificationById = catchAsync(async (req: any, res: any) => {
-  const notificationId = req.params.notificationId;
-  const notification = await notificationServices.getSingleNotificationFromDB(
-    req,
-    notificationId
-  );
+const readNotificationByUserIdController = catchAsync(
+  async (req: Request, res: Response) => {
+    const notifications = await notificationService.readNotificationByUserId(
+      req.user?.id
+    );
 
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: "Notification retrieved successfully",
-    data: notification,
-  });
-});
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Notifications marked as read successfully",
+      data: notifications,
+    });
+  }
+);
 
+const deleteNotificationByIdController = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id: notificationId } = req.params;
 
+    const result = await notificationService.deleteNotificationById(
+      req.user?.id,
+      notificationId
+    );
 
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Notification deleted successfully",
+      data: result,
+    });
+  }
+);
 
-const deleteNotification = catchAsync(async (req: any, res: any) => {
-  const notificationId = req.params.notificationId;
-  const notification = await notificationServices.deleteNotificationFromDB(
-    req,
-    notificationId
-  );
+const deleteAllNotificationsController = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await notificationService.deleteAllNotifications(
+      req.user?.id
+    );
 
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: "Notification deleted successfully",
-    data: notification,
-  });
-});
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "All notifications deleted successfully",
+      data: result,
+    });
+  }
+);
 
-
-export const notificationController = {
-  sendNotification,
-//   sendNotifications,
-  getNotifications,
-  getSingleNotificationById,
-  deleteNotification
+export const NotificationController = {
+  sendNotificationToUser,
+  getAllNotificationsController,
+  getNotificationByUserIdController,
+  readNotificationByUserIdController,
+  deleteNotificationByIdController,
+  deleteAllNotificationsController,
+  saveNotification,
 };
