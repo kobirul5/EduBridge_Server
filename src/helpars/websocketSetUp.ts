@@ -6,10 +6,21 @@ import { jwtHelpers } from "./jwtHelpers";
 
 interface ExtendedWebSocket extends WebSocket {
   userId?: string;
+  role?: string;
 }
 
 const onlineUsers = new Set<string>();
 const userSockets = new Map<string, ExtendedWebSocket>();
+
+const activeCalls = new Map<
+  string,
+  {
+    participants: Set<string>;
+    hostId: string;
+    callType: "audio" | "video";
+    offer: any;
+  }
+>();
 
 export function setupWebSocket(server: Server) {
   const wss = new WebSocketServer({ server });
@@ -43,9 +54,9 @@ export function setupWebSocket(server: Server) {
               ws.close();
               return;
             }
-
-            const { id } = user;
+            const { id, role } = user;
             ws.userId = id;
+            ws.role = role;
             onlineUsers.add(id);
             userSockets.set(id, ws);
 
@@ -53,6 +64,24 @@ export function setupWebSocket(server: Server) {
               where: { id: user.id },
               data: { isOnline: true },
             });
+
+            // Check if there are active calls this user should be notified about
+            for (const [callId, call] of activeCalls.entries()) {
+              if (call.participants.has(id)) {
+                // Notify user about active call
+                ws.send(
+                  JSON.stringify({
+                    event: "activeCallNotification",
+                    data: {
+                      callId,
+                      hostId: call.hostId,
+                      callType: call.callType,
+                      participants: Array.from(call.participants),
+                    },
+                  })
+                );
+              }
+            }
 
             broadcastToAll(wss, {
               event: "userStatus",
@@ -240,9 +269,7 @@ export function setupWebSocket(server: Server) {
                       ? room.receiverId
                       : room.senderId;
 
-                  const userInfo = userInfos.find(
-                    (u) => u.id === otherUserId
-                  );
+                  const userInfo = userInfos.find((u) => u.id === otherUserId);
 
                   // Unread count for this room
                   const unreadCount = await prisma.chat.count({
@@ -289,7 +316,7 @@ export function setupWebSocket(server: Server) {
       }
     });
 
-    ws.on("close", async() => {
+    ws.on("close", async () => {
       if (ws.userId) {
         onlineUsers.delete(ws.userId);
         userSockets.delete(ws.userId);
@@ -297,6 +324,28 @@ export function setupWebSocket(server: Server) {
           where: { id: ws.userId },
           data: { isOnline: false },
         });
+
+        // Remove user from any active calls
+        for (const [callId, call] of activeCalls.entries()) {
+          if (call.participants.has(ws.userId)) {
+            call.participants.delete(ws.userId);
+
+            // Notify other participants about the user leaving
+            broadcastToCallParticipants(callId, {
+              event: "participantLeft",
+              data: { userId: ws.userId },
+            });
+
+            // If host leaves or no participants left, end the call
+            if (call.hostId === ws.userId || call.participants.size === 0) {
+              activeCalls.delete(callId);
+              broadcastToCallParticipants(callId, {
+                event: "callEnded",
+                data: { reason: "Host ended the call" },
+              });
+            }
+          }
+        }
 
         broadcastToAll(wss, {
           event: "userStatus",
@@ -310,8 +359,6 @@ export function setupWebSocket(server: Server) {
   return wss;
 }
 
-
-
 function broadcastToAll(wss: WebSocketServer, message: object) {
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
@@ -320,99 +367,316 @@ function broadcastToAll(wss: WebSocketServer, message: object) {
   });
 }
 
+function broadcastToCallParticipants(callId: string, message: object) {
+  const call = activeCalls.get(callId);
+  if (!call) return;
 
+  call.participants.forEach((participantId) => {
+    const participantSocket = userSockets.get(participantId);
+    if (participantSocket && participantSocket.readyState === WebSocket.OPEN) {
+      participantSocket.send(JSON.stringify(message));
+    }
+  });
+}
+
+// function broadcastToAll(wss: WebSocketServer, message: object) {
+//   wss.clients.forEach((client) => {
+//     if (client.readyState === WebSocket.OPEN) {
+//       client.send(JSON.stringify(message));
+//     }
+//   });
+// }
 
 async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
   const { event } = parsedData;
 
   switch (event) {
-    case "callUser": {
-      const { toUserId, offer, callType } = parsedData;
+    case "initiateCall": {
+      // Only tutors can initiate calls
+      if (ws.role !== "TUTOR") {
+        ws.send(
+          JSON.stringify({
+            event: "error",
+            message: "Only tutors can initiate calls.",
+          })
+        );
+        return;
+      }
+
+      const { participantIds, callType } = parsedData;
 
       if (!ws.userId) {
-        ws.send(JSON.stringify({ event: "error", message: "User not authenticated." }));
+        ws.send(
+          JSON.stringify({ event: "error", message: "User not authenticated." })
+        );
         return;
       }
 
       if (!callType || !["audio", "video"].includes(callType)) {
-        ws.send(JSON.stringify({ event: "error", message: "callType must be 'audio' or 'video'." }));
+        ws.send(
+          JSON.stringify({
+            event: "error",
+            message: "callType must be 'audio' or 'video'.",
+          })
+        );
         return;
       }
 
-      const receiverSocket = userSockets.get(toUserId);
-      if (receiverSocket && receiverSocket.readyState === WebSocket.OPEN) {
-        receiverSocket.send(
+      if (!participantIds || !Array.isArray(participantIds)) {
+        ws.send(
           JSON.stringify({
-            event: "incomingCall",
-            data: { fromUserId: ws.userId, offer, callType },
+            event: "error",
+            message: "participantIds must be an array.",
           })
         );
-      } else {
-        ws.send(JSON.stringify({ event: "error", message: "Receiver not available." }));
+        return;
       }
+
+      // Generate a unique call ID
+      const callId = `call_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      // Create the call with host and participants
+      const participants = new Set<string>([ws.userId, ...participantIds]);
+      activeCalls.set(callId, {
+        participants,
+        hostId: ws.userId,
+        callType,
+        offer: parsedData.offer,
+      });
+
+      // Notify all participants about the call
+      participants.forEach((participantId) => {
+        if (participantId !== ws.userId) {
+          const participantSocket = userSockets.get(participantId);
+          if (
+            participantSocket &&
+            participantSocket.readyState === WebSocket.OPEN
+          ) {
+            participantSocket.send(
+              JSON.stringify({
+                event: "incomingCall",
+                data: {
+                  callId,
+                  hostId: ws.userId,
+                  offer: parsedData.offer,
+                  callType,
+                  participants: Array.from(participants),
+                },
+              })
+            );
+          }
+        }
+      });
+
+      // Confirm call initiation to host
+      ws.send(
+        JSON.stringify({
+          event: "callInitiated",
+          data: { callId, participants: Array.from(participants) },
+        })
+      );
       break;
     }
 
     case "answerCall": {
-      const { toUserId, answer } = parsedData;
+      const { callId, answer } = parsedData;
 
       if (!ws.userId) return;
 
-      const callerSocket = userSockets.get(toUserId);
-      if (callerSocket && callerSocket.readyState === WebSocket.OPEN) {
-        callerSocket.send(
-          JSON.stringify({
-            event: "callAnswered",
-            data: { fromUserId: ws.userId, answer },
-          })
-        );
+      const call = activeCalls.get(callId);
+      if (!call) {
+        ws.send(JSON.stringify({ event: "error", message: "Call not found." }));
+        return;
       }
+
+      // Add user to call participants if not already there
+      if (!call.participants.has(ws.userId)) {
+        call.participants.add(ws.userId);
+      }
+
+      // Send answer to all other participants
+      call.participants.forEach((participantId) => {
+        if (participantId !== ws.userId) {
+          const participantSocket = userSockets.get(participantId);
+          if (
+            participantSocket &&
+            participantSocket.readyState === WebSocket.OPEN
+          ) {
+            participantSocket.send(
+              JSON.stringify({
+                event: "participantJoined",
+                data: {
+                  callId,
+                  userId: ws.userId,
+                  answer,
+                },
+              })
+            );
+          }
+        }
+      });
+
+      // Send current participants list to the joining user
+      ws.send(
+        JSON.stringify({
+          event: "callParticipants",
+          data: {
+            callId,
+            participants: Array.from(call.participants),
+            hostId: call.hostId,
+            callType: call.callType,
+            offer: call.offer,
+          },
+        })
+      );
       break;
     }
 
     case "iceCandidate": {
-      const { toUserId, candidate } = parsedData;
+      const { callId, candidate, targetUserId } = parsedData;
 
       if (!ws.userId) return;
 
-      const peerSocket = userSockets.get(toUserId);
-      if (peerSocket && peerSocket.readyState === WebSocket.OPEN) {
-        peerSocket.send(
-          JSON.stringify({
-            event: "iceCandidate",
-            data: { fromUserId: ws.userId, candidate },
-          })
-        );
+      // If targetUserId is specified, send to that user only
+      if (targetUserId) {
+        const targetSocket = userSockets.get(targetUserId);
+        if (targetSocket && targetSocket.readyState === WebSocket.OPEN) {
+          targetSocket.send(
+            JSON.stringify({
+              event: "iceCandidate",
+              data: { callId, fromUserId: ws.userId, candidate },
+            })
+          );
+        }
+        return;
+      }
+
+      // Otherwise, broadcast to all call participants
+      const call = activeCalls.get(callId);
+      if (!call) return;
+
+      call.participants.forEach((participantId) => {
+        if (participantId !== ws.userId) {
+          const participantSocket = userSockets.get(participantId);
+          if (
+            participantSocket &&
+            participantSocket.readyState === WebSocket.OPEN
+          ) {
+            participantSocket.send(
+              JSON.stringify({
+                event: "iceCandidate",
+                data: { callId, fromUserId: ws.userId, candidate },
+              })
+            );
+          }
+        }
+      });
+      break;
+    }
+
+    case "leaveCall": {
+      const { callId } = parsedData;
+
+      if (!ws.userId) return;
+
+      const call = activeCalls.get(callId);
+      if (!call) return;
+
+      // Remove user from call participants
+      call.participants.delete(ws.userId);
+
+      // Notify other participants about the user leaving
+      call.participants.forEach((participantId) => {
+        const participantSocket = userSockets.get(participantId);
+        if (
+          participantSocket &&
+          participantSocket.readyState === WebSocket.OPEN
+        ) {
+          participantSocket.send(
+            JSON.stringify({
+              event: "participantLeft",
+              data: { callId, userId: ws.userId },
+            })
+          );
+        }
+      });
+
+      // If host leaves or no participants left, end the call
+      if (call.hostId === ws.userId || call.participants.size === 0) {
+        activeCalls.delete(callId);
+        call.participants.forEach((participantId) => {
+          const participantSocket = userSockets.get(participantId);
+          if (
+            participantSocket &&
+            participantSocket.readyState === WebSocket.OPEN
+          ) {
+            participantSocket.send(
+              JSON.stringify({
+                event: "callEnded",
+                data: { callId, reason: "Host ended the call" },
+              })
+            );
+          }
+        });
       }
       break;
     }
 
-    case "disconnectCall": {
-      const { toUserId } = parsedData;
+    case "joinExistingCall": {
+      const { callId } = parsedData;
 
       if (!ws.userId) return;
 
-      const peerSocket = userSockets.get(toUserId);
-      if (peerSocket && peerSocket.readyState === WebSocket.OPEN) {
-        peerSocket.send(
-          JSON.stringify({
-            event: "callDisconnected",
-            data: { fromUserId: ws.userId, message: "Call disconnected." },
-          })
-        );
+      const call = activeCalls.get(callId);
+      if (!call) {
+        ws.send(JSON.stringify({ event: "error", message: "Call not found." }));
+        return;
       }
+
+      // Add user to call participants
+      call.participants.add(ws.userId);
+
+      // Notify other participants about the new user
+      call.participants.forEach((participantId) => {
+        if (participantId !== ws.userId) {
+          const participantSocket = userSockets.get(participantId);
+          if (
+            participantSocket &&
+            participantSocket.readyState === WebSocket.OPEN
+          ) {
+            participantSocket.send(
+              JSON.stringify({
+                event: "participantJoined",
+                data: { callId, userId: ws.userId },
+              })
+            );
+          }
+        }
+      });
+
+      // Send current participants list to the joining user
+      ws.send(
+        JSON.stringify({
+          event: "callParticipants",
+          data: {
+            callId,
+            participants: Array.from(call.participants),
+            hostId: call.hostId,
+            callType: call.callType,
+            offer: call.offer,
+          },
+        })
+      );
       break;
     }
 
     default:
-      ws.send(JSON.stringify({ event: "error", message: "Unknown call event." }));
+      // For unknown events, do nothing (they might be handled by the main switch)
+      break;
   }
 }
-
-
-
-
-
 
 // // authenticate event
 
@@ -434,8 +698,6 @@ async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
 // {
 //     "event": "project"
 // }
-
-
 
 // // fetchChats event
 
@@ -467,11 +729,9 @@ async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
 //     "images": []
 // }
 
-
 // //fetchGroupMessages
 
 // {
 //     "event": "fetchGroupMessages",
 //     "groupId": "83459203859208"
 // }
-
