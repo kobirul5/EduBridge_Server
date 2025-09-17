@@ -58,7 +58,18 @@ const getTutorByIdService = async (id: string) => {
       experience: true,
       about: true,
       createdAt: true,
-      totalReviews: true,
+      tutorReview: {
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              profileImage: true,
+            },
+          },
+        },
+      },
     },
   });
 
