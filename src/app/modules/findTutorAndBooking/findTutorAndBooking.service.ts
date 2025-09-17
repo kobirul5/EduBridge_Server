@@ -58,6 +58,7 @@ const getTutorByIdService = async (id: string) => {
       experience: true,
       about: true,
       createdAt: true,
+      totalReviews: true,
     },
   });
 
