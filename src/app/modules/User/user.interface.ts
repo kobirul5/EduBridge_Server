@@ -26,4 +26,4 @@ export type IUserFilterRequest = {
   minAge?: number | undefined;
   maxAge?: number | undefined;
   distanceRange?: number | undefined;
-}
+} 
