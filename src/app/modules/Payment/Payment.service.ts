@@ -47,7 +47,7 @@ const createPaymentIntent = async ({
   //   throw new ApiError(httpStatus.BAD_REQUEST, "Payment already completed");
   // }
 
-  console.log(bookingData.totalAmount);
+
 
   try {
     // Stripe payment create
