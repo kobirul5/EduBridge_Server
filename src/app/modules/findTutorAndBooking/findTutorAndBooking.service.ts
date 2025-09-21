@@ -39,6 +39,8 @@ const getAllTurorsService = async () => {
 };
 
 const getTutorByIdService = async (id: string) => {
+
+
   const user = await prisma.user.findUnique({
     where: { id },
     select: {
@@ -57,6 +59,7 @@ const getTutorByIdService = async (id: string) => {
       availableTime: true,
       experience: true,
       about: true,
+      city: true,
       createdAt: true,
       tutorReview: {
         include: {

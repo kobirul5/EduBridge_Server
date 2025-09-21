@@ -15,6 +15,11 @@ const createReviewService = async (studentId: string, payload: {
     throw new ApiError(httpStatus.BAD_REQUEST,"Rating, comment, and tutor ID are required");
   }
 
+
+  if(studentId === tutorId) {
+    throw new ApiError(httpStatus.BAD_REQUEST,"You cannot review yourself");
+  }
+
   if(rating < 1 || rating > 5) {
     throw new ApiError(httpStatus.BAD_REQUEST,"Rating must be between 1 and 5");
   }
