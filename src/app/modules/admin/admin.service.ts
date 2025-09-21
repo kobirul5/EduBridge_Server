@@ -352,27 +352,6 @@ const getWarningTutorsService = async () => {
   return lowRatingUsers;
 };
 
-// get warning tutors
-// const getWalletService = async () => {
-
-//   const result = await prisma.payment.findMany({
-//     select: {
-//       id: true,
-//       amountPaid: true,
-//       // createdAt: true,
-//       tutorID: true,
-//       studentID: true,
-//     }
-//   });
-
-//   const total = await prisma.payment.aggregate({
-//     _sum: {
-//       amountPaid: true,
-//     }
-//   });
-
-//   return {total: total._sum.amountPaid, result};
-// }
 
 const getWalletService = async () => {
   const now = new Date();
@@ -500,7 +479,7 @@ const warnTutorService = async ({
     },
   });
 
-  // ✅ Tutor খুঁজে বের করা fcmToken এর জন্য
+  // ✅ Tutor 
   const tutor = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, fullName: true, fcmToken: true },
