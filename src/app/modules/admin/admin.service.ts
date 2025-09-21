@@ -1,19 +1,32 @@
-import { TutorRequest, UserRole, UserStatus } from "@prisma/client";
+import {
+  NotificationType,
+  TutorRequest,
+  UserRole,
+  UserStatus,
+} from "@prisma/client";
 import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
+import { notificationService } from "../Notification/Notification.service";
 
 interface GetAllUsersQuery {
-  role?: UserRole;       // STUDENT / TUTOR
+  role?: UserRole; // STUDENT / TUTOR
   searchTerm?: string;
-  page?: string;       // page number
-  limit?: string;      // page size
+  page?: string; // page number
+  limit?: string; // page size
   sort?: string;
-  subject?: string      // e.g., "-createdAt"
+  subject?: string; // e.g., "-createdAt"
 }
 
 const getAllUsers = async (query: GetAllUsersQuery) => {
-  const { role, subject, searchTerm, page = "1", limit = "10", sort = "-createdAt" } = query;
+  const {
+    role,
+    subject,
+    searchTerm,
+    page = "1",
+    limit = "10",
+    sort = "-createdAt",
+  } = query;
 
   // Pagination
   const skip = (Number(page) - 1) * Number(limit);
@@ -46,11 +59,9 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
     ];
   }
 
-
   where.status = {
-    not: UserStatus.SUSPENDED
-  }
-
+    not: UserStatus.SUSPENDED,
+  };
 
   // Fetch data
   const [data, total] = await Promise.all([
@@ -87,7 +98,6 @@ const getAllUsers = async (query: GetAllUsersQuery) => {
 };
 
 const getTutorRequest = async ({ adminId }: { adminId: string }) => {
-
   const admin = await prisma.user.findUnique({
     where: { id: adminId, role: UserRole.ADMIN },
   });
@@ -99,9 +109,12 @@ const getTutorRequest = async ({ adminId }: { adminId: string }) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Unauthorized  request!");
   }
 
-
   const result = await prisma.user.findMany({
-    where: { isTutorApproved: false, isTutorRequest: true, role: UserRole.TUTOR },
+    where: {
+      isTutorApproved: false,
+      isTutorRequest: true,
+      role: UserRole.TUTOR,
+    },
     select: {
       id: true,
       fullName: true,
@@ -114,15 +127,19 @@ const getTutorRequest = async ({ adminId }: { adminId: string }) => {
       role: true,
       subject: true,
       createdAt: true,
-    }
+    },
   });
   return result;
 };
 
-
 // get tutor request by id
-const getTutorRequestById = async ({ tutorId, adminId }: { tutorId: string, adminId: string }) => {
-
+const getTutorRequestById = async ({
+  tutorId,
+  adminId,
+}: {
+  tutorId: string;
+  adminId: string;
+}) => {
   if (!tutorId) {
     throw new Error("User tutor id  is required");
   }
@@ -138,18 +155,21 @@ const getTutorRequestById = async ({ tutorId, adminId }: { tutorId: string, admi
     throw new ApiError(httpStatus.NOT_FOUND, "Unauthorized  request!");
   }
 
-
   const result = await prisma.user.findUnique({
-    where: { id: tutorId }
+    where: { id: tutorId },
   });
   return result;
-
-
 };
 
-
-const updateTutorRequestStatus = async ({ tutorId, adminId, status }: { tutorId: string, adminId: string, status: TutorRequest }) => {
-
+const updateTutorRequestStatus = async ({
+  tutorId,
+  adminId,
+  status,
+}: {
+  tutorId: string;
+  adminId: string;
+  status: TutorRequest;
+}) => {
   const admin = await prisma.user.findUnique({
     where: { id: adminId, role: UserRole.ADMIN },
   });
@@ -162,16 +182,18 @@ const updateTutorRequestStatus = async ({ tutorId, adminId, status }: { tutorId:
   }
 
   if (status !== TutorRequest.ACCEPTED && status !== TutorRequest.CANCELLED) {
-    throw new ApiError(httpStatus.BAD_REQUEST, " Status must be either 'ACCEPTED' or 'CANCELLED'!");
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      " Status must be either 'ACCEPTED' or 'CANCELLED'!"
+    );
   }
-
 
   const result = await prisma.user.update({
     where: { id: tutorId },
     data: {
       isTutorRequest: false,
       isTutorApproved: status === TutorRequest.ACCEPTED ? true : false,
-      tutorRequestStatus: status
+      tutorRequestStatus: status,
     },
     select: {
       id: true,
@@ -184,7 +206,7 @@ const updateTutorRequestStatus = async ({ tutorId, adminId, status }: { tutorId:
       role: true,
       subject: true,
       createdAt: true,
-    }
+    },
   });
   return result;
 };
@@ -250,9 +272,9 @@ const getStatsService = async () => {
     _sum: { amountPaid: true },
   });
 
-  const LastSevenDays = dateArray7.map(date => {
+  const LastSevenDays = dateArray7.map((date) => {
     const found = paymentsByDay7.find(
-      d => new Date(d.createdAt).toLocaleDateString("en-CA") === date
+      (d) => new Date(d.createdAt).toLocaleDateString("en-CA") === date
     );
     return { date, amountPaid: found?._sum.amountPaid ?? 0 };
   });
@@ -264,9 +286,9 @@ const getStatsService = async () => {
     _sum: { amountPaid: true },
   });
 
-  const LastThirtyDays = dateArray30.map(date => {
+  const LastThirtyDays = dateArray30.map((date) => {
     const found = paymentsByDay30.find(
-      d => new Date(d.createdAt).toLocaleDateString("en-CA") === date
+      (d) => new Date(d.createdAt).toLocaleDateString("en-CA") === date
     );
     return { date, amountPaid: found?._sum.amountPaid ?? 0 };
   });
@@ -283,71 +305,55 @@ const getStatsService = async () => {
   };
 };
 
-
-
 // get warning tutors
 const getWarningTutorsService = async () => {
-
-  // const lowRatingUsers = await prisma.user.findMany({
-  //   where: {
-  //     tutorReview: {
-  //       some: { rating: 1 }
-  //     }
-  //   },
-  //   include: {
-  //     tutorReview: {
-  //       where: { rating: 1 },
-  //       include: {
-  //         student: {
-  //           select: {
-  //             id: true,
-  //             fullName: true,
-  //             email: true,
-  //             profileImage: true,
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // });
+  const allUsers = await prisma.user.findMany({
+    where: {
+      role: UserRole.TUTOR,
+      status: UserStatus.SUSPENDED,
+    },
+  });
 
   const lowRatingUsers = await prisma.user.findMany({
-  where: {
-    tutorReview: {
-      some: { rating: 1 }
-    }
-  },
-  select: { // explicitly choose fields for the main user
-    id: true,
-    fullName: true,
-    email: true,
-    profileImage: true,
-    createdAt: true,
-    role: true,
-    tutorReview: {
-      where: { rating: 1 },
-      include: {
-        student: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            profileImage: true,
-            // role: true
-          }
-        }
-      }
-    }
-  }
-});
+    where: {
+      tutorReview: {
+        some: { rating: 1 },
+      },
+      status: {
+        not: UserStatus.SUSPENDED,
+      },
+    },
+    select: {
+      // explicitly choose fields for the main user
+      id: true,
+      fullName: true,
+      email: true,
+      profileImage: true,
+      createdAt: true,
+      role: true,
+      status: true,
+      tutorReview: {
+        where: { rating: 1 },
+        include: {
+          student: {
+            select: {
+              id: true,
+              fullName: true,
+              email: true,
+              profileImage: true,
+              // role: true
+            },
+          },
+        },
+      },
+    },
+  });
 
   return lowRatingUsers;
 };
 
 // get warning tutors
 // const getWalletService = async () => {
-
-
 
 //   const result = await prisma.payment.findMany({
 //     select: {
@@ -365,8 +371,6 @@ const getWarningTutorsService = async () => {
 //     }
 //   });
 
-
-
 //   return {total: total._sum.amountPaid, result};
 // }
 
@@ -375,26 +379,26 @@ const getWalletService = async () => {
 
   // ===== This Week Range =====
   const startOfThisWeek = new Date(now);
-  startOfThisWeek.setDate(now.getDate() - now.getDay()); 
+  startOfThisWeek.setDate(now.getDate() - now.getDay());
   startOfThisWeek.setHours(0, 0, 0, 0);
 
   // ===== Total Income =====
   const total = await prisma.payment.aggregate({
-    _sum: { amountPaid: true }
+    _sum: { amountPaid: true },
   });
 
   // ===== Last Week Income =====
   const lastWeekTotal = await prisma.payment.aggregate({
     _sum: { amountPaid: true },
     where: {
-      createdAt: { lt: startOfThisWeek } 
-    }
+      createdAt: { lt: startOfThisWeek },
+    },
   });
 
   const totalAmount = total._sum.amountPaid ?? 0;
   const lastWeekAmount = lastWeekTotal._sum.amountPaid ?? 0;
-  const lastWeekPercentage = totalAmount > 0 ? (lastWeekAmount / totalAmount) * 100 : 0;
-
+  const lastWeekPercentage =
+    totalAmount > 0 ? (lastWeekAmount / totalAmount) * 100 : 0;
 
   // =====  =====
   const thisWeekAmount = totalAmount - lastWeekAmount;
@@ -405,20 +409,20 @@ const getWalletService = async () => {
     percentageChange = (thisWeekAmount / lastWeekAmount) * 100;
   }
 
-    const result = await prisma.payment.findMany({
+  const result = await prisma.payment.findMany({
     select: {
       id: true,
       amountPaid: true,
       // createdAt: true,
       studentID: true,
-      student:{
+      student: {
         select: {
           fullName: true,
           profileImage: true,
-          email: true
-        }
-      }
-    }
+          email: true,
+        },
+      },
+    },
   });
 
   return {
@@ -426,14 +430,57 @@ const getWalletService = async () => {
     lastWeek: lastWeekAmount,
     thisWeek: thisWeekAmount,
     percentageChange: lastWeekPercentage.toFixed(2),
-    user: result
+    user: result,
   };
 };
 
-
 // get warning tutors
-const warnTutorService = async ({ userId, adminId, message }: { userId: string, message: string, adminId: string }) => {
+// const warnTutorService = async ({
+//   userId,
+//   adminId,
+//   message,
+// }: {
+//   userId: string;
+//   message: string;
+//   adminId: string;
+// }) => {
+//   if (!adminId) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "unauthorized request!");
+//   }
 
+//   if (!userId) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "User id is required!");
+//   }
+//   if (!message) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "Message is required!");
+//   }
+
+//   const result = await prisma.warning.create({
+//     data: {
+//       userId: userId,
+//       message,
+//       adminId,
+//     },
+//   });
+
+//   const notificationPayload = {
+//     userId: userId,
+//     message: message,
+//     adminId,
+//   };
+
+//   return result;
+// };
+
+const warnTutorService = async ({
+  userId,
+  adminId,
+  message,
+}: {
+  userId: string;
+  message: string;
+  adminId: string;
+}) => {
   if (!adminId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "unauthorized request!");
   }
@@ -445,22 +492,54 @@ const warnTutorService = async ({ userId, adminId, message }: { userId: string, 
     throw new ApiError(httpStatus.BAD_REQUEST, "Message is required!");
   }
 
-
-
   const result = await prisma.warning.create({
     data: {
       userId: userId,
       message,
-      adminId
-    }
-  })
+      adminId,
+    },
+  });
 
-  return result
-}
+  // ✅ Tutor খুঁজে বের করা fcmToken এর জন্য
+  const tutor = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, fullName: true, fcmToken: true },
+  });
+
+  if (tutor) {
+    const notificationPayload = {
+      title: "You Have Received a Warning",
+      body: message,
+      type: NotificationType.REMINDER,
+      data: JSON.stringify({
+        tutorId: tutor.id,
+        warningId: result.id,
+      }),
+      targetId: tutor.id,
+      slug: "tutor-warning",
+    };
+
+    //  Push notification 
+    if (tutor.fcmToken) {
+      await notificationService.sendNotification(tutor.fcmToken as string, notificationPayload, tutor.id);
+    }
+
+    //  Database এ notification save
+    await notificationService.saveNotification(notificationPayload, tutor.id);
+  }
+
+  return result;
+};
+
 
 // get warning tutors
-const suspendTutorService = async ({ tutorId, adminId }: { tutorId: string, adminId: string }) => {
-
+const suspendTutorService = async ({
+  tutorId,
+  adminId,
+}: {
+  tutorId: string;
+  adminId: string;
+}) => {
   if (!adminId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "unauthorized request!");
   }
@@ -472,6 +551,7 @@ const suspendTutorService = async ({ tutorId, adminId }: { tutorId: string, admi
   const tutor = await prisma.user.findUnique({
     where: { id: tutorId, role: UserRole.TUTOR },
   });
+
   if (!tutor) {
     throw new ApiError(httpStatus.NOT_FOUND, "Tutor not found!");
   }
@@ -479,7 +559,6 @@ const suspendTutorService = async ({ tutorId, adminId }: { tutorId: string, admi
   if (tutor.status === UserStatus.SUSPENDED) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Tutor is already suspended!");
   }
-
 
   const result = await prisma.user.update({
     where: { id: tutorId },
@@ -496,13 +575,38 @@ const suspendTutorService = async ({ tutorId, adminId }: { tutorId: string, admi
       profileImage: true,
       about: true,
       createdAt: true,
-      updatedAt: true
-    }
-  })
+      updatedAt: true,
+      fcmToken: true, //  notification
+    },
+  });
 
-  return result
-}
+  //  Notification
+  const notificationPayload = {
+    title: "Your Account Has Been Suspended",
+    body: `Hello ${result.fullName}, your tutor account has been suspended by the admin due to policy violations or poor performance.`,
+    type: NotificationType.REMINDER,
+    data: JSON.stringify({
+      tutorId: result.id,
+      status: result.status,
+    }),
+    targetId: result.id,
+    slug: "tutor-suspended",
+  };
 
+  //  Push notification পাঠানো (যদি fcmToken থাকে)
+  if (result.fcmToken) {
+    await notificationService.sendNotification(
+      tutor?.fcmToken as string,
+      notificationPayload,
+      result.id
+    );
+  }
+
+  //  Database এ notification save
+  await notificationService.saveNotification(notificationPayload, result.id);
+
+  return result;
+};
 
 export const adminService = {
   getAllUsers,
@@ -513,5 +617,5 @@ export const adminService = {
   getWarningTutorsService,
   getWalletService,
   warnTutorService,
-  suspendTutorService
+  suspendTutorService,
 };
