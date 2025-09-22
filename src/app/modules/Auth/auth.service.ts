@@ -8,7 +8,8 @@ import ApiError from "../../../errors/ApiErrors";
 import { jwtHelpers } from "../../../helpars/jwtHelpers";
 
 import prisma from "../../../shared/prisma";
-import { emailSender } from "../../../shared/emailSender";
+import emailSender from "../../../shared/brevoEmailSender";
+// import { emailSender } from "../../../shared/emailSender";
 
 // user login
 const loginUser = async (payload: {
@@ -162,7 +163,7 @@ const forgotPassword = async (payload: { email: string }) => {
         <div style="text-align: center; margin-top: 30px;">
             <p style="font-size: 12px; color: #999; text-align: center;">
                 Best Regards,<br/>
-                <span style="font-weight: bold; color: #3f51b5;">Nmbull Team</span><br/>
+                <span style="font-weight: bold; color: #3f51b5;">Tutoni Team</span><br/>
                 <a href="mailto:support@nmbull.com" style="color: #ffffff; text-decoration: none; font-weight: bold;">Contact Support</a>
             </p>
         </div>
