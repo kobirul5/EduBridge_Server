@@ -4,7 +4,8 @@ import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
 import stripe from '../../../shared/stripe';
 import { getTransactionId } from '../../../shared/getTransactionId';
-import { PaymentStatus, UserRole } from '@prisma/client';
+import { NotificationType, PaymentStatus, UserRole } from '@prisma/client';
+import { notificationService } from '../Notification/Notification.service';
 
 
 
@@ -39,13 +40,13 @@ const createPaymentIntent = async ({
     throw new ApiError(httpStatus.NOT_FOUND, "Service request not found");
   }
 
-  // if (!bookingData.isAccepted) {
+  // if (!bookingData.bookingsStatus) {
   //   throw new ApiError(httpStatus.BAD_REQUEST, "Service request is not Accepted");
   // }
 
-  // if (bookingData.isPaymentDone) {
-  //   throw new ApiError(httpStatus.BAD_REQUEST, "Payment already completed");
-  // }
+  if (bookingData.paymentStatus === PaymentStatus.COMPLETED) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Payment already completed");
+  }
 
 
 
@@ -81,6 +82,8 @@ const createPaymentIntent = async ({
         },
       });
 
+     
+
       throw new ApiError(httpStatus.BAD_REQUEST, "Payment failed");
     }
 
@@ -108,6 +111,8 @@ const createPaymentIntent = async ({
         },
       });
 
+      await sendBookingPaymentNotifications(bookingData);
+
       return paymentRecord;
     });
 
@@ -118,6 +123,55 @@ const createPaymentIntent = async ({
   }
 };
 
+const sendBookingPaymentNotifications = async (booking: any) => {
+  // Payload for student
+  const studentNotification = {
+    title: "Payment Successful",
+    body: `Your payment for booking of subject ${booking.subject} on ${booking.date} is successful. Your tutor ${booking.tutor.firstName} has confirmed the booking.`,
+    type: NotificationType.BOOKING,
+    data: JSON.stringify({
+      tutorId: booking.tutorId,
+      subject: booking.subject,
+      role: "student",
+    }),
+    targetId: booking.student.id,
+    slug: "booking-payment-success",
+  };
+
+  // Payload for tutor
+  const tutorNotification = {
+    title: "Booking Payment Received",
+    body: `You have received payment for booking of subject ${booking.subject} on ${booking.date} by student ${booking.student.firstName}.`,
+    type: NotificationType.BOOKING,
+    data: JSON.stringify({
+      studentId: booking.studentId,
+      subject: booking.subject,
+      role: "tutor",
+    }),
+    targetId: booking.tutor.id,
+    slug: "booking-payment-received",
+  };
+
+  // Send & save student notification
+  if (booking.student?.fcmToken) {
+    await notificationService.sendNotification(
+      booking.student.fcmToken,
+      studentNotification,
+      booking.student.id
+    );
+  }
+  await notificationService.saveNotification(studentNotification, booking.student.id);
+
+  // Send & save tutor notification
+  if (booking.tutor?.fcmToken) {
+    await notificationService.sendNotification(
+      booking.tutor.fcmToken,
+      tutorNotification,
+      booking.tutor.id
+    );
+  }
+  await notificationService.saveNotification(tutorNotification, booking.tutor.id);
+}
 
 const getAllTutorEarning = async (userId: string) => {
 
