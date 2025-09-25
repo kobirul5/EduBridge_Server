@@ -82,7 +82,7 @@ const loginUser = async (payload: {
     config.jwt.expires_in as string
   );
 
-  return { token: accessToken };
+  return { id: userData.id, token: accessToken };
 };
 
 
