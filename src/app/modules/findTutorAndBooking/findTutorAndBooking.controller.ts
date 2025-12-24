@@ -85,6 +85,7 @@ const getBookingRequestForTutor = catchAsync(async (req, res) => {
 
 const acceptOrCancelledBookingRequest = catchAsync(async (req:Request, res:Response) => {
   const { bookingId } = req.params;
+  const userId = req.user.id;
   if (!bookingId) {
     throw new ApiError(httpStatus.BAD_REQUEST, 'Booking ID is required');
   } 
@@ -96,7 +97,8 @@ const acceptOrCancelledBookingRequest = catchAsync(async (req:Request, res:Respo
 
 
 
-  const result = await findTutorAndBookingService.acceptOrRejectBookingRequestService(bookingId, data.bookingStatus);
+  const result = await findTutorAndBookingService.acceptOrRejectBookingRequestService(bookingId, data.bookingStatus, userId);
+
   sendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,

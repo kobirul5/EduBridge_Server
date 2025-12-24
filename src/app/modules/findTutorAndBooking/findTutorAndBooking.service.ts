@@ -227,93 +227,215 @@ const getBookingRequestService = async (tutorId: string) => {
 
 // accept or reject booking request
 
+// const acceptOrRejectBookingRequestService = async (
+//   bookingId: string,
+//   bookingsStatus: BookingStatus,
+//   userId: string
+// ) => {
+
+//   const user = await prisma.user.findUnique({ where: { id: userId } });
+
+//   if(!user) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "Expire token or invalid token");
+//   }
+
+
+
+//   if (!bookingId) {
+//     throw new ApiError(httpStatus.BAD_REQUEST, "Booking ID is required");
+//   }
+//   const allowedStatuses: BookingStatus[] = [
+//     BookingStatus.CONFIRMED,
+//     BookingStatus.CANCELLED,
+//   ];
+
+//   if (!allowedStatuses.includes(bookingsStatus)) {
+//     throw new ApiError(
+//       httpStatus.BAD_REQUEST,
+//       "Invalid booking status. Must be either 'CONFIRMED' or 'CANCELLED'"
+//     );
+//   }
+
+//   if (bookingsStatus !== "CONFIRMED") {
+//     const booking = await prisma.booking.update({
+//       where: { id: bookingId },
+//       data: { bookingsStatus: bookingsStatus },
+//     });
+
+//     if (!booking) {
+//       throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+//     }
+//     return booking;
+//   }
+
+//   const booking = await prisma.booking.update({
+//     where: { id: bookingId },
+//     data: { bookingsStatus: bookingsStatus },
+//   });
+//   if (!booking) {
+//     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
+//   }
+
+//   const student = await prisma.user.findUnique({
+//     where: { id: booking.studentId },
+//   });
+
+//   if (!student) {
+//     throw new ApiError(httpStatus.NOT_FOUND, "Student not found");
+//   }
+
+//   // Send notification to courier about cash payment
+//   if (booking.studentId && student?.fcmToken) {
+//     await notificationService.sendNotification(
+//       student.fcmToken,
+//       {
+//         title: "Your Booking Request Has Been Updated By Tutor",
+//         body: `Your booking request for subject ${booking.subject} on ${
+//           booking.date
+//         } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
+//         type: NotificationType.BOOKING,
+//         data: JSON.stringify({
+//           tutorId: booking.tutorId,
+//           subject: booking.subject,
+//         }),
+//         targetId: student.id,
+//         slug: "booking-request-updated",
+//       },
+//       student.id
+//     );
+//   }
+//   if (booking.studentId) {
+//     await notificationService.saveNotification(
+//       {
+//         title: "Your Booking Request Has Been Updated By Tutor",
+//         body: `Your booking request for subject ${booking.subject} on ${
+//           booking.date
+//         } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
+//         type: NotificationType.BOOKING,
+//         data: JSON.stringify({
+//           tutorId: booking.tutorId,
+//           subject: booking.subject,
+//         }),
+//         targetId: student.id,
+//         slug: "booking-request-updated",
+//       },
+//       student.id
+//     );
+//   }
+//   return booking;
+// };
+
 const acceptOrRejectBookingRequestService = async (
   bookingId: string,
-  bookingsStatus: BookingStatus
+  bookingsStatus: BookingStatus,
+  userId: string
 ) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid or expired token");
+  }
+
   if (!bookingId) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Booking ID is required");
   }
-  const allowedStatuses: BookingStatus[] = [
-    BookingStatus.CONFIRMED,
-    BookingStatus.CANCELLED,
-  ];
 
-  if (!allowedStatuses.includes(bookingsStatus)) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "Invalid booking status. Must be either 'CONFIRMED' or 'CANCELLED'"
-    );
-  }
-
-  if (bookingsStatus !== "CONFIRMED") {
-    const booking = await prisma.booking.update({
-      where: { id: bookingId },
-      data: { bookingsStatus: bookingsStatus },
-    });
-
-    if (!booking) {
-      throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
-    }
-    return booking;
-  }
-
-  const booking = await prisma.booking.update({
+  const booking = await prisma.booking.findUnique({
     where: { id: bookingId },
-    data: { bookingsStatus: bookingsStatus },
   });
+
   if (!booking) {
     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
   }
 
-  const student = await prisma.user.findUnique({
-    where: { id: booking.studentId },
+  // 🔒 Payment successful → no cancel allowed
+  if (
+    bookingsStatus === BookingStatus.CANCELLED &&
+    booking.paymentStatus === "COMPLETED"
+  ) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Booking cannot be cancelled after payment is completed"
+    );
+  }
+
+  // 👤 Role based permission
+  if (user.role === "STUDENT" && booking.studentId !== user.id) {
+    throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized action");
+  }
+
+  if (user.role === "TUTOR" && booking.tutorId !== user.id) {
+    throw new ApiError(httpStatus.FORBIDDEN, "Unauthorized action");
+  }
+
+  // ✅ Update booking status
+  const updatedBooking = await prisma.booking.update({
+    where: { id: bookingId },
+    data: { bookingsStatus },
   });
 
-  if (!student) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Student not found");
+  // ---------------- Notifications ----------------
+
+  let receiverId: string;
+  let title: string;
+  let body: string;
+
+  if (bookingsStatus === BookingStatus.CANCELLED) {
+    if (user.role === "STUDENT") {
+      receiverId = booking.tutorId;
+      title = "Booking Cancelled by Student";
+      body = `The student has cancelled the booking for ${booking.subject} scheduled on ${booking.date}.`;
+    } else {
+      receiverId = booking.studentId;
+      title = "Booking Cancelled by Tutor";
+      body = `The tutor has cancelled your booking for ${booking.subject} scheduled on ${booking.date}.`;
+    }
+  } else {
+    receiverId = booking.studentId;
+    title = "Booking Confirmed";
+    body = `Your booking for ${booking.subject} on ${booking.date} has been confirmed by the tutor.`;
   }
 
-  // Send notification to courier about cash payment
-  if (booking.studentId && student?.fcmToken) {
+  const receiver = await prisma.user.findUnique({
+    where: { id: receiverId },
+  });
+
+  if (receiver?.fcmToken) {
     await notificationService.sendNotification(
-      student.fcmToken,
+      receiver.fcmToken,
       {
-        title: "Your Booking Request Has Been Updated By Tutor",
-        body: `Your booking request for subject ${booking.subject} on ${
-          booking.date
-        } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
+        title,
+        body,
         type: NotificationType.BOOKING,
         data: JSON.stringify({
-          tutorId: booking.tutorId,
+          bookingId: booking.id,
           subject: booking.subject,
         }),
-        targetId: student.id,
-        slug: "booking-request-updated",
+        targetId: receiverId,
+        slug: "booking-status-updated",
       },
-      student.id
+      receiverId
     );
   }
-  if (booking.studentId) {
-    await notificationService.saveNotification(
-      {
-        title: "Your Booking Request Has Been Updated By Tutor",
-        body: `Your booking request for subject ${booking.subject} on ${
-          booking.date
-        } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
-        type: NotificationType.BOOKING,
-        data: JSON.stringify({
-          tutorId: booking.tutorId,
-          subject: booking.subject,
-        }),
-        targetId: student.id,
-        slug: "booking-request-updated",
-      },
-      student.id
-    );
-  }
-  return booking;
+
+  await notificationService.saveNotification(
+    {
+      title,
+      body,
+      type: NotificationType.BOOKING,
+      data: JSON.stringify({
+        bookingId: booking.id,
+        subject: booking.subject,
+      }),
+      targetId: receiverId,
+      slug: "booking-status-updated",
+    },
+    receiverId
+  );
+
+  return updatedBooking;
 };
+
 
 // get accepted booking for a tutor
 const getBookingRequestForTutorService = async (tutorId: string) => {
