@@ -174,7 +174,7 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
   const bookings = await prisma.booking.findMany({
     where: {
       studentId: studentId,
-      NOT: { bookingsStatus: BookingStatus.CANCELLED },
+      // NOT: { bookingsStatus: BookingStatus.CANCELLED },
     },
     include: {
       tutor: {
@@ -194,9 +194,9 @@ const getDailyScheduleAndBookingService = async (studentId: string) => {
     },
   });
 
-  if (!bookings || bookings.length === 0) {
-    throw new ApiError(httpStatus.NOT_FOUND, "No bookings found");
-  }
+  // if (!bookings || bookings.length === 0) {
+  //   throw new ApiError(httpStatus.NOT_FOUND, "No bookings found");
+  // }
   return bookings;
 };
 
