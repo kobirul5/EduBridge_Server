@@ -12,9 +12,24 @@ import { notificationService } from "../Notification/Notification.service";
 
 // TODO: Create a service to handle features related to finding tutors and booking sessions
 
-const getAllTurorsService = async () => {
-  const tutors = await prisma.user.findMany({
-    where: { role: UserRole.TUTOR, isTutorApproved: true },
+const getAllTurorsService = async (filters: any) => {
+  const { minPrice, maxPrice, subject } = filters;
+
+  const where: any = {
+    role: UserRole.TUTOR,
+    isTutorApproved: true,
+  };
+
+  // Price filter
+  if (minPrice || maxPrice) {
+    where.hourlyRate = {};
+    if (minPrice) where.hourlyRate.gte = Number(minPrice);
+    if (maxPrice) where.hourlyRate.lte = Number(maxPrice);
+  }
+
+  // Fetch tutors first
+  let tutors: any[] = await prisma.user.findMany({
+    where,
     select: {
       id: true,
       fullName: true,
@@ -32,9 +47,23 @@ const getAllTurorsService = async () => {
     },
   });
 
+  // Subject filter (partial match)
+  if (subject) {
+    const query: string[] = Array.isArray(subject)
+      ? subject.map((s) => s.toLowerCase())
+      : subject.toLowerCase().split(',').map((s:any) => s.trim());
+
+    tutors = tutors.filter((tutor) =>
+      tutor.subject.some((subj: string) =>
+        query.some((q) => subj.toLowerCase().includes(q))
+      )
+    );
+  }
+
   if (!tutors || tutors.length === 0) {
     throw new ApiError(httpStatus.NOT_FOUND, "No tutors found");
   }
+
   return tutors;
 };
 

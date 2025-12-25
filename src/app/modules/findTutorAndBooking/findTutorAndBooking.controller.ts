@@ -14,15 +14,22 @@ import { Request, Response } from 'express';
 
 
 const getFindTutorAndBooking = catchAsync(async (req, res) => {
+  const filters = {
+    minPrice: req.query.minPrice,
+    maxPrice: req.query.maxPrice,
+    subject: req.query.subject,
+  };
 
-  const result = await findTutorAndBookingService.getAllTurorsService();
+  const result = await findTutorAndBookingService.getAllTurorsService(filters);
+
   sendResponse(res, {
     success: true,
-    statusCode: httpStatus.CREATED,
-    message: 'FindTutorAndBooking created successfully!',
+    statusCode: httpStatus.OK,
+    message: 'Tutors fetched successfully!',
     data: result,
   });
 });
+
 
 const getTurorById = catchAsync(async (req, res) => {
 
