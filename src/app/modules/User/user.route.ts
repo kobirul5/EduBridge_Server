@@ -30,6 +30,7 @@ router.patch(
 );
 
 router.post("/demo-class", auth(), fileUploader.uploadFile, userController.postDemoVideo )
+router.delete("/delete-account", auth(), userController.deleteAccount)
 
 
 export const userRoutes = router;

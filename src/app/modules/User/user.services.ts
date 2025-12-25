@@ -184,10 +184,18 @@ const postDemoVideo = async (file: any, userId: string) => {
   return data
 }
 
+const deleteAccount = async (userId: string) => {
+
+  const user = await prisma.user.delete({
+    where: { id: userId },
+  });
+  return user;
+}
 
 export const userService = {
   createUserIntoDb,
   getMyProfile,
   updateUserProfile,
-  postDemoVideo
+  postDemoVideo,
+  deleteAccount
 };

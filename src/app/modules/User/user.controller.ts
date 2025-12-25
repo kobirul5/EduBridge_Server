@@ -75,9 +75,21 @@ const postDemoVideo = async(req: any, res: Response) => {
 }
 
 
+const deleteAccount = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await userService.deleteAccount(userId);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User deleted successfully",
+    data: result,
+  });
+});
+
 export const userController = {
   createUser,
   getMyProfile,
   updateProfileController,
-  postDemoVideo
+  postDemoVideo,
+  deleteAccount
 };
