@@ -95,9 +95,52 @@ const getMyProfile = async (userToken: string) => {
       id: decodedToken.id,
     }
   });
+ const profileComplete = isProfileComplete(userProfile);
 
-  return userProfile;
+
+  return {...userProfile, isProfileComplete: profileComplete};
 };
+
+const isProfileComplete = (user: any): boolean => {
+  if (!user) return false;
+
+  // string / number fields
+  if (
+    !user.fullName ||
+    !user.phoneNumber ||
+    !user.gender ||
+    !user.city ||
+    !user.education ||
+    !user.about
+  ) {
+    return false;
+  }
+
+  // number fields
+  if (!user.hourlyRate || user.hourlyRate <= 0) {
+    return false;
+  }
+
+  // if (!user.experience || user.experience <= 0) {
+  //   return false;
+  // }
+
+  // array fields
+  if (!Array.isArray(user.subject) || user.subject.length === 0) {
+    return false;
+  }
+
+  if (!Array.isArray(user.availableDays) || user.availableDays.length === 0) {
+    return false;
+  }
+
+  if (!Array.isArray(user.availableTime) || user.availableTime.length === 0) {
+    return false;
+  }
+
+  return true;
+};
+
 
 const updateUserProfile = async (userId: string, updateData: Partial<IUser>, file?: Express.Multer.File) => {
   // Check if user exists
