@@ -1,4 +1,4 @@
-import { User, UserRole, UserStatus } from "@prisma/client";
+import { NotificationType, User, UserRole, UserStatus } from "@prisma/client";
 import * as bcrypt from "bcrypt";
 import crypto from "crypto";
 import httpStatus from "http-status";
@@ -9,6 +9,7 @@ import { jwtHelpers } from "../../../helpars/jwtHelpers";
 
 import prisma from "../../../shared/prisma";
 import emailSender from "../../../shared/brevoEmailSender";
+import { notificationService } from "../Notification/Notification.service";
 // import { emailSender } from "../../../shared/emailSender";
 
 // user login
@@ -18,10 +19,11 @@ const loginUser = async (payload: {
   fcmToken?: string;
   role: UserRole;
 }) => {
-
-
   if (!payload.email || !payload.password || !payload.role) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email, password and role are required");
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Email, password and role are required"
+    );
   }
 
   const validRoles = [UserRole.STUDENT, UserRole.TUTOR, UserRole.ADMIN];
@@ -33,20 +35,21 @@ const loginUser = async (payload: {
     );
   }
 
-
   // Check if the user exists
   const userData = await prisma.user.findUnique({
     where: {
       email: payload.email,
-      role: payload.role
+      role: payload.role,
     },
   });
-
 
   if (!userData?.email) {
     throw new ApiError(
       httpStatus.NOT_FOUND,
-      "User not found! with this email " + payload.email + " and role " + payload.role
+      "User not found! with this email " +
+        payload.email +
+        " and role " +
+        payload.role
     );
   }
 
@@ -60,7 +63,7 @@ const loginUser = async (payload: {
     throw new ApiError(httpStatus.BAD_REQUEST, "Password incorrect!");
   }
 
-  if(userData.status === UserStatus.SUSPENDED) {
+  if (userData.status === UserStatus.SUSPENDED) {
     throw new ApiError(httpStatus.BAD_REQUEST, "User suspended!");
   }
 
@@ -84,7 +87,6 @@ const loginUser = async (payload: {
 
   return { id: userData.id, token: accessToken };
 };
-
 
 // change password
 
@@ -171,7 +173,7 @@ const forgotPassword = async (payload: { email: string }) => {
 </div> `;
 
   // Send the OTP email to the user
-  await emailSender(userData.email, html, 'Forgot Password OTP',);
+  await emailSender(userData.email, html, "Forgot Password OTP");
 
   // Update the user's OTP and expiration in the database
   await prisma.user.update({
@@ -182,9 +184,8 @@ const forgotPassword = async (payload: { email: string }) => {
     },
   });
 
-  return { message: 'Reset password OTP sent to your email successfully', otp };
+  return { message: "Reset password OTP sent to your email successfully", otp };
 };
-
 
 const resendOtp = async (email: string) => {
   // Check if the user exists
@@ -281,12 +282,15 @@ const verifyForgotPasswordOtp = async (payload: {
     },
   });
 
-
-  const token = await jwtHelpers.generateToken({
-    id: user.id,
-    email: user.email,
-    role: user.role
-  }, config.jwt.jwt_secret as Secret, config.jwt.expires_in as string);
+  const token = await jwtHelpers.generateToken(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    },
+    config.jwt.jwt_secret as Secret,
+    config.jwt.expires_in as string
+  );
 
   return { message: "OTP verification successful", token: token };
 };
@@ -319,29 +323,55 @@ const resetPassword = async (payload: { password: string; email: string }) => {
 };
 
 const deleteUser = async (userId: string) => {
-  // Check if the user exists
-
-  if (!userId) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "User ID is required");
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-  });
+  const user = await prisma.user.findUnique({ where: { id: userId } });
 
   if (!user) {
-    throw new ApiError(httpStatus.NOT_FOUND, "This user is not found!");
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  // Delete the user from the database
-  await prisma.user.delete({
-    where: { id: userId },
+  // Delete the user
+  const deletedUser = await prisma.user.delete({ where: { id: userId } });
+
+  // Notify admin about the user deletion
+  const adminUsers = await prisma.user.findMany({
+    where: { role: UserRole.ADMIN },
   });
 
-  return null;
-}
+  try {
+    for (const admin of adminUsers) {
+      if (admin.fcmToken) {
+        await notificationService.sendNotification(
+          admin.fcmToken,
+          {
+            title: "User Account Deleted",
+            body: `The account of ${user.fullName} (${user.email}) has been deleted.`,
+            type: NotificationType.ADMIN,
+            data: JSON.stringify({ userId: user.id }),
+            targetId: admin.id,
+            slug: "user-deleted",
+          },
+          admin.id
+        );
+      }
 
+      await notificationService.saveNotification(
+        {
+          title: "User Account Deleted",
+          body: `The account of ${user.fullName} (${user.email}) has been deleted.`,
+          type: NotificationType.ADMIN,
+          data: JSON.stringify({ userId: user.id }),
+          targetId: admin.id,
+          slug: "user-deleted",
+        },
+        admin.id
+      );
+    }
+  } catch (error) {
+    console.log("Error notifying admin about user deletion:", error);
+  }
 
+  return deletedUser;
+};
 
 export const AuthServices = {
   loginUser,

@@ -47,6 +47,7 @@ enum NotificationType {
   REMINDER
   BOOKING
   PAYMENT
+  ADMIN
 }
 
 model User {
@@ -192,7 +193,7 @@ model Chat {
 
 model Notification {
   id        String           @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String           @db.ObjectId
+  userId    String?          @db.ObjectId
   title     String
   body      String
   type      NotificationType @default(GENERAL)
@@ -204,7 +205,7 @@ model Notification {
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notifications")
 }
