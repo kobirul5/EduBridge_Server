@@ -146,9 +146,6 @@ const createBookingService = async (
       endTime: endTime,
       totalAmount: totalAmount,
     },
-    // include: {
-    //   tutor: true
-    // }
   });
 
   if (!booking) {

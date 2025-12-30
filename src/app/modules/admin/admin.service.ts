@@ -220,6 +220,17 @@ const updateTutorRequestStatus = async ({
       createdAt: true,
     },
   });
+
+  // Send notification to the tutor
+  await prisma.notification.create({
+    data: {
+      userId: tutorId,
+      title: `Your tutor request has been ${status.toLowerCase()}`,
+      body: `Admin has ${status.toLowerCase()} your tutor request.`,
+      type: NotificationType.GENERAL,
+    },
+  });
+
   return result;
 };
 

@@ -98,9 +98,18 @@ const getAllNotificationsController = catchAsync(
 
 const getNotificationByUserIdController = catchAsync(
   async (req: Request, res: Response) => {
-    const notifications = await notificationService.getNotificationByUserId(
-      req.user?.id
-    );
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return sendResponse(res, {
+        statusCode: httpStatus.UNAUTHORIZED,
+        success: false,
+        message: "User not authenticated",
+        data: null,
+      });
+    }
+
+    const notifications = await notificationService.getNotificationByUserId(userId);
 
     sendResponse(res, {
       statusCode: httpStatus.OK,
