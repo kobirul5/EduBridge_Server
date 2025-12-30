@@ -8,6 +8,7 @@ import prisma from "../../../shared/prisma";
 import ApiError from "../../../errors/ApiErrors";
 import httpStatus from "http-status";
 import { notificationService } from "../Notification/Notification.service";
+import { isProfileComplete } from "../User/user.services";
 
 interface GetAllUsersQuery {
   role?: UserRole; // STUDENT / TUTOR
@@ -116,20 +117,31 @@ const getTutorRequest = async ({ adminId }: { adminId: string }) => {
       role: UserRole.TUTOR,
     },
     select: {
-      id: true,
+       id: true,
       fullName: true,
+      phoneNumber: true,
+      gender: true,
+      city: true,
+      education: true,
+      about: true,
+      hourlyRate: true,
       experience: true,
+      subject: true,
+      availableDays: true,
+      availableTime: true,
       isTutorApproved: true,
       isTutorRequest: true,
       tutorRequestStatus: true,
       profileImage: true,
       email: true,
       role: true,
-      subject: true,
       createdAt: true,
     },
   });
-  return result;
+
+ const filteredUsers = result.filter(user => isProfileComplete(user));
+
+  return filteredUsers;
 };
 
 // get tutor request by id
