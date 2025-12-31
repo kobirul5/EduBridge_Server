@@ -168,6 +168,19 @@ const deleteAllNotificationsController = catchAsync(
   }
 );
 
+const getAdminNotificationsController = catchAsync(
+  async (req: Request, res: Response) => {
+    const notifications = await notificationService.getAdminNotifications();
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "All notifications fetched successfully",
+      data: notifications,
+    });
+  }
+);
+
 export const NotificationController = {
   sendNotificationToUser,
   getAllNotificationsController,
@@ -176,4 +189,5 @@ export const NotificationController = {
   deleteNotificationByIdController,
   deleteAllNotificationsController,
   saveNotification,
+  getAdminNotificationsController
 };

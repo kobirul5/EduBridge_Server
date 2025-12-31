@@ -17,6 +17,11 @@ router.get(
   NotificationController.getNotificationByUserIdController
 );
 
+router.get(
+  '/',
+  auth(),
+  NotificationController.getAdminNotificationsController
+)
 // Mark notifications as read by user ID
 router.put(
   "/read",

@@ -214,6 +214,26 @@ const deleteAllNotifications = async (userId: string) => {
   }
 };
 
+const getAdminNotifications = async () => {
+  try {
+    
+    const notifications = await prisma.notification.findMany({
+      where: { type: NotificationType.ADMIN },
+      orderBy: { createdAt: "desc" },
+    });
+
+    
+    return notifications;
+  } catch (error) {
+    console.error("Error in getAdminNotifications:", error);
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Failed to fetch admin notifications",
+      error instanceof Error ? error.stack : undefined
+    );
+  }
+};
 
 export const notificationService = {
   sendNotification,
@@ -223,4 +243,5 @@ export const notificationService = {
   deleteNotificationById,
   deleteAllNotifications,
   saveNotification,
+  getAdminNotifications
 };

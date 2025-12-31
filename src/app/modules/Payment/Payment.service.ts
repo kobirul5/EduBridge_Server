@@ -1,4 +1,3 @@
-
 import httpStatus from 'http-status';
 import prisma from '../../../shared/prisma';
 import ApiError from '../../../errors/ApiErrors';
@@ -152,6 +151,18 @@ const sendBookingPaymentNotifications = async (booking: any) => {
     slug: "booking-payment-received",
   };
 
+  // Payload for admin
+  const adminNotification = {
+    title: "New Payment Received",
+    body: `A payment has been made for booking of subject ${booking.subject} on ${booking.date}.`,
+    type: NotificationType.PAYMENT,
+    data: JSON.stringify({
+      bookingId: booking.id,
+      amount: booking.totalAmount,
+    }),
+    slug: "new-payment-received",
+  };
+
   // Send & save student notification
   if (booking.student?.fcmToken) {
     await notificationService.sendNotification(
@@ -171,6 +182,22 @@ const sendBookingPaymentNotifications = async (booking: any) => {
     );
   }
   await notificationService.saveNotification(tutorNotification, booking.tutor.id);
+
+  // Notify all admins
+  const admins = await prisma.user.findMany({ where: { role: UserRole.ADMIN } });
+  for (const admin of admins) {
+    if (admin.fcmToken) {
+      await notificationService.sendNotification(
+        admin.fcmToken,
+        adminNotification,
+        admin.id
+      );
+    }
+    await notificationService.saveNotification(
+      { ...adminNotification, targetId: admin.id },
+      admin.id
+    );
+  }
 }
 
 const getAllTutorEarning = async (userId: string) => {
