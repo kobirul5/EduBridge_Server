@@ -1,7 +1,7 @@
 module.exports = {
     apps: [
         {
-            name: 'raalaaan',
+            name: 'EduBridge_Server',
             script: './dist/server.js',
             args: 'start',
             env: {

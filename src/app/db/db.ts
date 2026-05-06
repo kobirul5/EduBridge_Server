@@ -12,7 +12,7 @@ export const initiateSuperAdmin = async () => {
   // const hashedPassword = await bcrypt.hash(userData.password, Number(config.bcrypt_salt_rounds));
 
   const payload: any = {
-    email: "admin@raalaaan.com",
+    email: "admin@EduBridge_Server.com",
     phoneNumber: "1234567890",
     password: hashedPassword,
     status: UserStatus.ACTIVE,
