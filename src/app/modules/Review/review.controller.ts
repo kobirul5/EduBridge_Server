@@ -28,19 +28,6 @@ import { reviewService } from "./review.service";
   });
 });
 
-//  const getReviewsByEvent = catchAsync(async (req: Request, res: Response) => {
-//   const eventId = req.params.eventId;
-//   const result = await reviewService.getTutorByIdService(eventId);
-
-//   sendResponse(res, {
-//     statusCode: httpStatus.OK,
-//     success: true,
-//     message: "Reviews fetched successfully!",
-//     data: result,
-//   });
-// });
-
-
 export const reviewController = {
   createReview,
   // getReviewsByEvent,

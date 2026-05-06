@@ -8,10 +8,6 @@ import httpStatus from 'http-status';
 import { Request, Response } from 'express';
 
 
-// TODO: Create a service to handle features related to finding tutors and booking sessions
-//TODO: get reviews and demo turorals for tutors using id
-
-
 
 const getFindTutorAndBooking = catchAsync(async (req, res) => {
   const filters = {
@@ -20,7 +16,7 @@ const getFindTutorAndBooking = catchAsync(async (req, res) => {
     subject: req.query.subject,
   };
 
-  const result = await findTutorAndBookingService.getAllTurorsService(filters);
+  const result = await findTutorAndBookingService.getAllTutorsService(filters);
 
   sendResponse(res, {
     success: true,
@@ -63,7 +59,7 @@ const createBooking = catchAsync(async (req, res) => {
   });
 });
 
-const findDailyscheduleAndBooking = catchAsync(async (req, res) => {
+const findDailyScheduleAndBooking = catchAsync(async (req, res) => {
   const studentId = req.user.id;
   const result = await findTutorAndBookingService.getDailyScheduleAndBookingService(studentId);
   sendResponse(res, {
@@ -86,9 +82,6 @@ const getBookingRequestForTutor = catchAsync(async (req, res) => {
     data: result,
   });
 });
-
-
-// accpet boioking request by booking id
 
 const acceptOrCancelledBookingRequest = catchAsync(async (req:Request, res:Response) => {
   const { bookingId } = req.params;
@@ -127,7 +120,7 @@ const getAcceptedBookingForTutor = catchAsync(async (req, res) => {
   });
 });
 
-const getAllFilterTurorsController = catchAsync(async (req, res) => {
+const getAllFilterTutorsController = catchAsync(async (req, res) => {
   const result = await findTutorAndBookingService.getAllFilterTutorsService(req);
   sendResponse(res, {
     success: true,
@@ -145,9 +138,9 @@ export const findTutorAndBookingController = {
   getFindTutorAndBooking,
   getTurorById,
   createBooking,
-  findDailyscheduleAndBooking,
+  findDailyScheduleAndBooking,
   getBookingRequestForTutor,
   acceptOrCancelledBookingRequest,
   getAcceptedBookingForTutor,
-  getAllFilterTurorsController
+  getAllFilterTutorsController
 };

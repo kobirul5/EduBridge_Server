@@ -6,11 +6,11 @@ import auth from '../../middlewares/auth';
 const router = Router();
 
 router.get('/tutors', auth(), findTutorAndBookingController.getFindTutorAndBooking);
-router.get('/tutors-filter', auth(), findTutorAndBookingController. getAllFilterTurorsController);
+router.get('/tutors-filter', auth(), findTutorAndBookingController.getAllFilterTutorsController);
 router.get('/tutor/:id', auth(), findTutorAndBookingController.getTurorById);
 // booking routes
 router.post('/booking', auth(), findTutorAndBookingController.createBooking);
-router.get('/daily-schedule', auth(), findTutorAndBookingController.findDailyscheduleAndBooking);
+router.get('/daily-schedule', auth(), findTutorAndBookingController.findDailyScheduleAndBooking);
 
 // booking request for tutor
 router.get('/booking-requests', auth(), findTutorAndBookingController.getBookingRequestForTutor);

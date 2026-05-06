@@ -12,7 +12,7 @@ import { notificationService } from "../Notification/Notification.service";
 
 // TODO: Create a service to handle features related to finding tutors and booking sessions
 
-const getAllTurorsService = async (filters: any) => {
+const getAllTutorsService = async (filters: any) => {
   const { minPrice, maxPrice, subject } = filters;
 
   const where: any = {
@@ -38,7 +38,7 @@ const getAllTurorsService = async (filters: any) => {
       subject: true,
       rating: true,
       role: true,
-      studentReviewes: true,
+      studentReviewers: true,
       profileImage: true,
       education: true,
       experience: true,
@@ -79,7 +79,7 @@ const getTutorByIdService = async (id: string) => {
       hourlyRate: true,
       subject: true,
       rating: true,
-      studentReviewes: true,
+      studentReviewers: true,
       demoClassUrl: true,
       role: true,
       profileImage: true,
@@ -251,105 +251,6 @@ const getBookingRequestService = async (tutorId: string) => {
   return bookingRequests;
 };
 
-// accept or reject booking request
-
-// const acceptOrRejectBookingRequestService = async (
-//   bookingId: string,
-//   bookingsStatus: BookingStatus,
-//   userId: string
-// ) => {
-
-//   const user = await prisma.user.findUnique({ where: { id: userId } });
-
-//   if(!user) {
-//     throw new ApiError(httpStatus.BAD_REQUEST, "Expire token or invalid token");
-//   }
-
-
-
-//   if (!bookingId) {
-//     throw new ApiError(httpStatus.BAD_REQUEST, "Booking ID is required");
-//   }
-//   const allowedStatuses: BookingStatus[] = [
-//     BookingStatus.CONFIRMED,
-//     BookingStatus.CANCELLED,
-//   ];
-
-//   if (!allowedStatuses.includes(bookingsStatus)) {
-//     throw new ApiError(
-//       httpStatus.BAD_REQUEST,
-//       "Invalid booking status. Must be either 'CONFIRMED' or 'CANCELLED'"
-//     );
-//   }
-
-//   if (bookingsStatus !== "CONFIRMED") {
-//     const booking = await prisma.booking.update({
-//       where: { id: bookingId },
-//       data: { bookingsStatus: bookingsStatus },
-//     });
-
-//     if (!booking) {
-//       throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
-//     }
-//     return booking;
-//   }
-
-//   const booking = await prisma.booking.update({
-//     where: { id: bookingId },
-//     data: { bookingsStatus: bookingsStatus },
-//   });
-//   if (!booking) {
-//     throw new ApiError(httpStatus.NOT_FOUND, "Booking not found");
-//   }
-
-//   const student = await prisma.user.findUnique({
-//     where: { id: booking.studentId },
-//   });
-
-//   if (!student) {
-//     throw new ApiError(httpStatus.NOT_FOUND, "Student not found");
-//   }
-
-//   // Send notification to courier about cash payment
-//   if (booking.studentId && student?.fcmToken) {
-//     await notificationService.sendNotification(
-//       student.fcmToken,
-//       {
-//         title: "Your Booking Request Has Been Updated By Tutor",
-//         body: `Your booking request for subject ${booking.subject} on ${
-//           booking.date
-//         } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
-//         type: NotificationType.BOOKING,
-//         data: JSON.stringify({
-//           tutorId: booking.tutorId,
-//           subject: booking.subject,
-//         }),
-//         targetId: student.id,
-//         slug: "booking-request-updated",
-//       },
-//       student.id
-//     );
-//   }
-//   if (booking.studentId) {
-//     await notificationService.saveNotification(
-//       {
-//         title: "Your Booking Request Has Been Updated By Tutor",
-//         body: `Your booking request for subject ${booking.subject} on ${
-//           booking.date
-//         } has been ${bookingsStatus.toLowerCase()} by the tutor. Please check your bookings for more details.`,
-//         type: NotificationType.BOOKING,
-//         data: JSON.stringify({
-//           tutorId: booking.tutorId,
-//           subject: booking.subject,
-//         }),
-//         targetId: student.id,
-//         slug: "booking-request-updated",
-//       },
-//       student.id
-//     );
-//   }
-//   return booking;
-// };
 
 const acceptOrRejectBookingRequestService = async (
   bookingId: string,
@@ -563,7 +464,7 @@ const getAllFilterTutorsService = async (req: any) => {
       subject: true,
       rating: true,
       role: true,
-      studentReviewes: true,
+      studentReviewers: true,
       profileImage: true,
       education: true,
       experience: true,
@@ -584,7 +485,7 @@ const getAllFilterTutorsService = async (req: any) => {
 };
 
 export const findTutorAndBookingService = {
-  getAllTurorsService,
+  getAllTutorsService,
   getTutorByIdService,
   createBookingService,
   getDailyScheduleAndBookingService,
