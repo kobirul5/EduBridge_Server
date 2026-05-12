@@ -9,7 +9,7 @@ export const initiateSuperAdmin = async () => {
     Number(config.bcrypt_salt_rounds)
   );
 
-  // const hashedPassword = await bcrypt.hash(userData.password, Number(config.bcrypt_salt_rounds));
+
 
   const payload: any = {
     email: "admin@EduBridge_Server.com",

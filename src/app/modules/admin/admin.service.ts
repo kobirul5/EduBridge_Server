@@ -437,42 +437,7 @@ const getWalletService = async () => {
 };
 
 // get warning tutors
-// const warnTutorService = async ({
-//   userId,
-//   adminId,
-//   message,
-// }: {
-//   userId: string;
-//   message: string;
-//   adminId: string;
-// }) => {
-//   if (!adminId) {
-//     throw new ApiError(httpStatus.BAD_REQUEST, "unauthorized request!");
-//   }
 
-//   if (!userId) {
-//     throw new ApiError(httpStatus.BAD_REQUEST, "User id is required!");
-//   }
-//   if (!message) {
-//     throw new ApiError(httpStatus.BAD_REQUEST, "Message is required!");
-//   }
-
-//   const result = await prisma.warning.create({
-//     data: {
-//       userId: userId,
-//       message,
-//       adminId,
-//     },
-//   });
-
-//   const notificationPayload = {
-//     userId: userId,
-//     message: message,
-//     adminId,
-//   };
-
-//   return result;
-// };
 
 const warnTutorService = async ({
   userId,

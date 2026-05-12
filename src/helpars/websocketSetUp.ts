@@ -22,7 +22,7 @@ const userSockets = new Map<string, ExtendedWebSocket>();
 
 
 export function setupWebSocket(server: Server) {
-  // const wss = new WebSocketServer({ server });
+
   const wss = new WebSocketServer({
     server,
     perMessageDeflate: false,
@@ -56,13 +56,13 @@ export function setupWebSocket(server: Server) {
     });
   }, 30000);
 
-  console.log("WebSocket server is running");
+
 
   // Handle WebSocket connections
   wss.on("connection", (ws: ExtendedWebSocket, req) => {
     ws.isAlive = true;
     ws.path = req.url;
-    console.log("New WebSocket connection established on path:", ws.path);
+
 
     // Send message when connected
     ws.send(
@@ -94,7 +94,7 @@ export function setupWebSocket(server: Server) {
             const token = parsedData.token;
 
             if (!token) {
-              console.log("No token provided");
+
               ws.close();
               return;
             }
@@ -105,7 +105,7 @@ export function setupWebSocket(server: Server) {
             );
 
             if (!user) {
-              console.log("Invalid token");
+
               ws.close();
               return;
             }
@@ -143,7 +143,6 @@ export function setupWebSocket(server: Server) {
             const { receiverId, message, images } = parsedData;
 
             if (!ws.userId || !receiverId || !message) {
-              console.log("Invalid message payload");
               return;
             }
 
@@ -192,7 +191,7 @@ export function setupWebSocket(server: Server) {
           case "fetchChats": {
             const { receiverId } = parsedData;
             if (!ws.userId) {
-              console.log("User not authenticated");
+
               return;
             }
 
@@ -233,7 +232,7 @@ export function setupWebSocket(server: Server) {
           case "unReadMessages": {
             const { receiverId } = parsedData;
             if (!ws.userId || !receiverId) {
-              console.log("Invalid unread messages payload");
+
               return;
             }
 
@@ -395,13 +394,7 @@ function broadcastToAll(wss: WebSocketServer, message: object) {
 }
 
 
-// function broadcastToAll(wss: WebSocketServer, message: object) {
-//   wss.clients.forEach((client) => {
-//     if (client.readyState === WebSocket.OPEN) {
-//       client.send(JSON.stringify(message));
-//     }
-//   });
-// }
+
 
 async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
   const { event } = parsedData;
@@ -536,60 +529,4 @@ async function handleCallEvents(ws: ExtendedWebSocket, parsedData: any) {
   }
 }
 
-// // authenticate event
 
-// {
-//   "event": "authenticate",
-//   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MzRhZjgwM2Y1ZjZiNDZkYzczNGQzZSIsImVtYWlsIjoic2Fzb2xvdjk3NEBvZnVsYXIuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NDgyODMyODQsImV4cCI6MTc3OTgxOTI4NH0.tXjUf2Uljdj008YmmYu8R3CRyEh5LWSF9lG4re0jfKs"
-// }
-
-// // single message event
-
-// {
-//     "event": "message",
-//     "receiverId": "934593023490",
-//     "message": " this is single message",
-//     "images": []
-// }
-
-// // project event , own data seen
-// {
-//     "event": "project"
-// }
-
-// // fetchChats event
-
-// {
-//     "event": "fetchChats",
-//     "receiverId": "395839458392"
-// }
-
-// // unReadMessages
-
-// {
-//     "event": "unReadMessages",
-//     "receiverId": "935903890523"
-// }
-
-// //messageList single
-
-// {
-//     "event": "messageList",
-
-// }
-
-// //groupMessage
-
-// {
-//     "event": "groupMessage",
-//     "groupId": "345098902",
-//     "message": "this is test",
-//     "images": []
-// }
-
-// //fetchGroupMessages
-
-// {
-//     "event": "fetchGroupMessages",
-//     "groupId": "83459203859208"
-// }

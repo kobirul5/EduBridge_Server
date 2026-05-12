@@ -1,12 +1,12 @@
 // Notification.service: Module file for the Notification.service functionality.
 
 import httpStatus from "http-status";
-// import admin from '../../../shared/firebase';
+
 import ApiError from "../../../errors/ApiErrors";
 import prisma from "../../../shared/prisma";
 import { NotificationType } from "@prisma/client";
 import admin from "./firebaseAdmin";
-// import admin from "../../../shared/firebase";
+
 
 interface INotificationPayload {
   title: string;
@@ -44,23 +44,17 @@ const sendNotification = async (
   };
 
   try {
-    console.log(
-      "Sending notification to token:",
-      deviceToken,
-      "with payload:",
-      message
-    );
+
 
     // Send notification using Firebase Admin SDK
     const response = await admin.messaging().send(message);
 
-    console.log("Notification response:", response);
 
-    console.log("Notification sent successfully");
+
+
   } catch (error) {
     console.error("Firebase send error:", error); // Add this line
-    // if (error instanceof ApiError) throw error;
-    // throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, 'Failed to send notification');
+
   }
 };
 
@@ -84,7 +78,7 @@ const saveNotification = async (
       },
     });
 
-    console.log("Notification saved successfully");
+
   } catch (error) {
     console.error("Error saving notification:", error);
   }
@@ -92,7 +86,7 @@ const saveNotification = async (
 
 const getAllNotifications = async () => {
   try {
-    console.log("Attempting to fetch all notifications...");
+
 
     const notifications = await prisma.notification.findMany({
       orderBy: { createdAt: "desc" },
@@ -115,9 +109,7 @@ const getAllNotifications = async () => {
       })
     );
 
-    console.log(
-      `Successfully fetched ${notificationsWithUser.length} notifications`
-    );
+
     return notificationsWithUser;
   } catch (error) {
     console.error("Error in getAllNotifications:", error);

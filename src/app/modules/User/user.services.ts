@@ -104,7 +104,7 @@ const getMyProfile = async (userToken: string) => {
 export const isProfileComplete = (user: any): boolean => {
   if (!user) return false;
 
-  console.log(user, 1);
+
   // string / number fields
   if (
     !user.fullName ||

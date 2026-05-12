@@ -18,7 +18,7 @@ import { reviewService } from "./review.service";
 
   const result = await reviewService.createReviewService(studentId, reviewData);
 
-  console.log("result", result);
+
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,
