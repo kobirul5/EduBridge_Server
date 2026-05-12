@@ -11,7 +11,7 @@ const router = express.Router();
 // user login route
 router.post(
   "/login",
-  // validateRequest(UserValidation.UserLoginValidationSchema),
+  validateRequest(UserValidation.UserLoginValidationSchema),
   AuthController.loginUser
 );
 
@@ -30,19 +30,23 @@ router.put(
 
 router.post(
   '/forgot-password',
+  validateRequest(authValidation.forgotPasswordValidationSchema),
   AuthController.forgotPassword
 );
 router.post(
   '/resend-otp',
+  validateRequest(authValidation.forgotPasswordValidationSchema),
   AuthController.resendOtp
 );
 router.post(
   '/verify-otp',
+  validateRequest(authValidation.verifyOtpValidationSchema),
   AuthController.verifyForgotPasswordOtp
 );
 
 router.post(
   '/reset-password',
+  validateRequest(authValidation.resetPasswordValidationSchema),
   AuthController.resetPassword
 )
 

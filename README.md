@@ -117,4 +117,4 @@ src/
 
 ---
 
-*Built with ❤️ by the EduBridge Team.*
+*Built with by Md. Kobirul Islam*

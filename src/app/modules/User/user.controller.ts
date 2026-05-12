@@ -4,6 +4,7 @@ import sendResponse from "../../../shared/sendResponse";
 import { userService } from "./user.services";
 import { Request, Response } from "express";
 import ApiError from "../../../errors/ApiErrors";
+import { UserValidation } from "./user.validation";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
 
@@ -42,10 +43,11 @@ const updateProfileController = catchAsync(async (req: Request, res: Response) =
 
   const userId = req.user.id;
   const updateData = JSON.parse(req.body.data);
+  const validatedData = UserValidation.userUpdateSchema.parse(updateData);
   const file = req.file;
 
 
-  const user = await userService.updateUserProfile(userId, updateData, file);
+  const user = await userService.updateUserProfile(userId, validatedData, file);
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
