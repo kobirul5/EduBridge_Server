@@ -102,7 +102,7 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
     await emailSender(userData.email, html, "Verify Your Email - EduBridge");
   } catch (err) {
     console.error("[register] failed to send email:", err);
-    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to send verification email. Please try again.");
+    // throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to send verification email. Please try again.");
   }
 
 
