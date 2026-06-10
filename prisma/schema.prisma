@@ -66,6 +66,7 @@ model User {
   demoClassUrl       String?      @default("")
   isTutorRequest     Boolean      @default(false)
   isTutorApproved    Boolean      @default(false)
+  emailVerified      Boolean      @default(false)
   tutorRequestStatus TutorRequest @default(PENDING)
   otp                Int?
   otpExpiresAt       DateTime?    @default(now())

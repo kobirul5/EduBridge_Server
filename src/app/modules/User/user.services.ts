@@ -1,4 +1,6 @@
-import {  UserRole } from "@prisma/client";
+import {  UserRole, UserStatus } from "@prisma/client";
+import crypto from "crypto";
+import emailSender from "../../../shared/brevoEmailSender";
 import * as bcrypt from "bcrypt";
 import httpStatus from "http-status";
 import config from "../../../config";
@@ -37,6 +39,9 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
   // hash password
   const hashedPassword = await bcrypt.hash(userData.password, Number(config.bcrypt_salt_rounds));
 
+  // Generate OTP
+  const otp = Number(crypto.randomInt(1000, 9999));
+  const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
 
   const dataToSave = {
     email: userData.email,
@@ -44,6 +49,9 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
     role: userData.role,
     isTutorRequest: userData.role === 'TUTOR',
     isTutorApproved: false,
+    status: UserStatus.INACTIVE,
+    otp,
+    otpExpiresAt: otpExpires,
   };
 
   // create user
@@ -57,9 +65,45 @@ const createUserIntoDb = async (userData: { email: string, password: string, rol
       isTutorApproved: true,
       createdAt: true,
       updatedAt: true,
-
     }
   });
+
+  // Send email content
+  const html = `
+<div style="font-family: Arial, sans-serif; color: #333; padding: 30px; background: linear-gradient(135deg, #6c63ff, #3f51b5); border-radius: 8px;">
+    <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 8px;">
+        <h2 style="color: #ffffff; font-size: 28px; text-align: center; margin-bottom: 20px;">
+            <span style="color: #ffeb3b;">Welcome to EduBridge!</span>
+        </h2>
+        <p style="font-size: 16px; color: #333; line-height: 1.5; text-align: center;">
+            Thank you for registering. Your verification OTP code is below.
+        </p>
+        <p style="font-size: 32px; font-weight: bold; color: #ff4081; text-align: center; margin: 20px 0;">
+            ${otp}
+        </p>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <p style="font-size: 14px; color: #555; margin-bottom: 10px;">
+                This OTP will expire in <strong>10 minutes</strong>. If you did not request this, please ignore this email.
+            </p>
+            <p style="font-size: 14px; color: #555; margin-bottom: 10px;">
+                If you need assistance, feel free to contact us.
+            </p>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+            <p style="font-size: 12px; color: #999; text-align: center;">
+                Best Regards,<br/>
+                <span style="font-weight: bold; color: #3f51b5;">EduBridge Team</span>
+            </p>
+        </div>
+    </div>
+</div> `;
+
+  try {
+    await emailSender(userData.email, html, "Verify Your Email - EduBridge");
+  } catch (err) {
+    console.error("[register] failed to send email:", err);
+    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "Failed to send verification email. Please try again.");
+  }
 
 
 

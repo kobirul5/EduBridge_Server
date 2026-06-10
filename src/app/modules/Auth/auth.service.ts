@@ -85,7 +85,13 @@ const loginUser = async (payload: {
     config.jwt.expires_in as string
   );
 
-  return { id: userData.id, token: accessToken };
+  return {
+    id: userData.id,
+    token: accessToken,
+    emailVerified: userData.emailVerified,
+    email: userData.email,
+    role: userData.role,
+  };
 };
 
 // change password
@@ -279,6 +285,7 @@ const verifyForgotPasswordOtp = async (payload: {
       otp: null, // Clear the OTP
       otpExpiresAt: null, // Clear the OTP expiration
       status: UserStatus.ACTIVE,
+      emailVerified: true,
     },
   });
 
